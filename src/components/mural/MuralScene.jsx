@@ -8,7 +8,11 @@ import PlacementGhost from './PlacementGhost'
 import { useMuralStore } from '@/store/muralStore'
 
 export default function MuralScene() {
-  const { artes, view, pendingArtwork, setSelectedArte, setView } = useMuralStore()
+  const artes = useMuralStore(s => s.artes)
+  const view = useMuralStore(s => s.view)
+  const pendingArtwork = useMuralStore(s => s.pendingArtwork)
+  const setSelectedArte = useMuralStore(s => s.setSelectedArte)
+  const setView = useMuralStore(s => s.setView)
 
   const handleFrameClick = (arte) => {
     setSelectedArte(arte)
@@ -17,7 +21,7 @@ export default function MuralScene() {
 
   return (
     <Canvas
-      frameloop="always"
+      frameloop={(view === 'mural' || view === 'placement') ? "always" : "never"}
       shadows
       camera={{ position: [0, 0, 10], fov: 50 }}
       dpr={[1, 2]}

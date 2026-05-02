@@ -25,7 +25,10 @@ async function detectRegion(setRegiao) {
 }
 
 export default function App() {
-  const { view, selectedArte, setRegiao, sessionUser } = useMuralStore()
+  const view = useMuralStore(s => s.view)
+  const selectedArte = useMuralStore(s => s.selectedArte)
+  const setRegiao = useMuralStore(s => s.setRegiao)
+  const sessionUser = useMuralStore(s => s.sessionUser)
 
   // Inicializa sync do mural
   useMural()

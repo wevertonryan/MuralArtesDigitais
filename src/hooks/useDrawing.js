@@ -4,7 +4,7 @@ import { CANVAS_WIDTH, CANVAS_HEIGHT, canvasToWebP, blobToDataURL, dataURLToBlob
 import { saveRascunho, getRascunho, clearRascunho } from '@/services/dexieService'
 
 const MAX_HISTORY = 50
-const AUTOSAVE_INTERVAL_MS = 30_000
+const AUTOSAVE_INTERVAL_MS = 120_000
 
 export function useDrawing(canvasRef) {
   const atramentRef = useRef(null)
@@ -33,7 +33,7 @@ export function useDrawing(canvasRef) {
       height: CANVAS_HEIGHT,
       color: color,
       weight: brushSize,
-      smoothing: 0.6,
+      smoothing: 0.4,
       adaptiveStroke: false,
     })
 
@@ -75,9 +75,13 @@ export function useDrawing(canvasRef) {
     if (!a) return
     a.color = color
     a.weight = brushSize
-    a.recordStrokes = !isDrawingDisabled
-    if (activeTool === 'eraser') a.mode = 'erase'
-    else a.mode = 'draw'
+    
+    if (isDrawingDisabled) {
+      a.mode = 'disabled'
+    } else {
+      if (activeTool === 'eraser') a.mode = 'erase'
+      else a.mode = 'draw'
+    }
   }, [activeTool, color, brushSize, isDrawingDisabled])
 
   // ===== HISTÓRICO =====

@@ -3,7 +3,6 @@ import { useDrawing } from '@/hooks/useDrawing'
 import { useMuralStore } from '@/store/muralStore'
 import { useSession } from '@/hooks/useSession'
 import Toolbar from './Toolbar'
-import ColorPopover from './ColorPopover'
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/utils/imageConverter'
 import WelcomeModal from '@/components/ui/WelcomeModal'
 
@@ -13,16 +12,16 @@ export default function DrawingCanvas() {
   const containerRef = useRef(null)
   const [scale, setScale] = useState(1)
   const [userZoom, setUserZoom] = useState(1)
-  const [offset, setOffset] = useState({ x: 0, y: 0 })
+  const [offset, setOffset] = useState({ x: 0, y: 10 })
   const [showWelcome, setShowWelcome] = useState(false)
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < window.innerHeight)
   const lastTouchDist = useRef(0)
   const lastTouchCenter = useRef({ x: 0, y: 0 })
   const isPinching = useRef(false)
   const lastPanPos = useRef(null)
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    const handleResize = () => setIsMobile(window.innerWidth < window.innerHeight)
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
@@ -32,7 +31,7 @@ export default function DrawingCanvas() {
   const [startPos, setStartPos] = useState(null)
   const [currentPos, setCurrentPos] = useState(null)
 
-  const { sessionUser } = useMuralStore()
+  const sessionUser = useMuralStore(s => s.sessionUser)
   const { hasPseudonimo } = useSession()
 
   const {
@@ -49,7 +48,8 @@ export default function DrawingCanvas() {
     setIsDrawingDisabled,
   } = useDrawing(canvasRef)
 
-  const { setView, setPendingArtwork } = useMuralStore()
+  const setView = useMuralStore(s => s.setView)
+  const setPendingArtwork = useMuralStore(s => s.setPendingArtwork)
 
   // ===== ESCALONAMENTO RESPONSIVO =====
   // O canvas tem 1280×720px fixos; usamos CSS transform:scale para caber na tela
@@ -84,19 +84,6 @@ export default function DrawingCanvas() {
 
   // ===== OVERLAY DRAWING (SHAPES) =====
   const handlePointerDown = useCallback((e) => {
-    // Detecta multi-toque (pinch)
-    if (e.nativeEvent.touches?.length > 1) {
-      isPinching.current = true
-      return
-    }
-    
-    // Mover Canvas (Hand Tool)
-    if (activeTool === 'hand') {
-      lastPanPos.current = { x: e.clientX, y: e.clientY }
-      overlayCanvasRef.current.setPointerCapture(e.pointerId)
-      return
-    }
-
     if (!['rect', 'circle', 'line'].includes(activeTool)) return
     if (!overlayCanvasRef.current) return
     const rect = overlayCanvasRef.current.getBoundingClientRect()
@@ -110,15 +97,6 @@ export default function DrawingCanvas() {
   const handlePointerMove = useCallback((e) => {
     if (isPinching.current) return
 
-    // Mover Canvas (Hand Tool)
-    if (activeTool === 'hand' && lastPanPos.current) {
-      const dx = e.clientX - lastPanPos.current.x
-      const dy = e.clientY - lastPanPos.current.y
-      setOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }))
-      lastPanPos.current = { x: e.clientX, y: e.clientY }
-      return
-    }
-
     if (!startPos) return
     if (!['rect', 'circle', 'line'].includes(activeTool)) return
     const rect = overlayCanvasRef.current.getBoundingClientRect()
@@ -128,14 +106,6 @@ export default function DrawingCanvas() {
   }, [startPos, activeTool, totalScale])
 
   const handlePointerUp = useCallback((e) => {
-    lastTouchDist.current = 0
-    lastTouchCenter.current = { x: 0, y: 0 }
-    if (isPinching.current) {
-      setIsDrawingDisabled(false)
-    }
-    isPinching.current = false
-    lastPanPos.current = null
-
     if (activeTool === 'hand') return
 
     if (['pen', 'eraser'].includes(activeTool)) {
@@ -176,15 +146,53 @@ export default function DrawingCanvas() {
     setCurrentPos(null)
   }, [startPos, currentPos, activeTool, color, brushSize, saveSnapshot])
 
-  // ===== PINCH & PAN LOGIC (Multi-touch) =====
+  // ===== NAVEGAÇÃO GLOBAL (Pinch & Pan) =====
+  const handleWrapperPointerDown = useCallback((e) => {
+    // Mover Canvas (Hand Tool) - Funciona em toda a wrapper
+    if (activeTool === 'hand') {
+      lastPanPos.current = { x: e.clientX, y: e.clientY }
+      e.currentTarget.setPointerCapture(e.pointerId)
+      return
+    }
+  }, [activeTool])
+
+  const handleWrapperPointerMove = useCallback((e) => {
+    if (activeTool !== 'hand' || !lastPanPos.current) return
+    
+    const dx = e.clientX - lastPanPos.current.x
+    const dy = e.clientY - lastPanPos.current.y
+    setOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }))
+    lastPanPos.current = { x: e.clientX, y: e.clientY }
+  }, [activeTool])
+
+  const handleWrapperPointerUp = useCallback(() => {
+    lastPanPos.current = null
+  }, [])
+
+  const handleTouchStart = useCallback((e) => {
+    if (e.touches.length === 2) {
+      isPinching.current = true
+      setIsDrawingDisabled(true)
+      
+      const touch1 = e.touches[0]
+      const touch2 = e.touches[1]
+      lastTouchDist.current = Math.sqrt(
+        Math.pow(touch2.clientX - touch1.clientX, 2) +
+        Math.pow(touch2.clientY - touch1.clientY, 2)
+      )
+      lastTouchCenter.current = {
+        x: (touch1.clientX + touch2.clientX) / 2,
+        y: (touch1.clientY + touch2.clientY) / 2
+      }
+    }
+  }, [setIsDrawingDisabled])
+
   const handleTouchMove = useCallback((e) => {
     if (e.touches.length === 2) {
       e.preventDefault()
-      if (!isPinching.current) {
-        setIsDrawingDisabled(true)
-      }
       isPinching.current = true
-      
+      setIsDrawingDisabled(true)
+
       const touch1 = e.touches[0]
       const touch2 = e.touches[1]
 
@@ -199,7 +207,7 @@ export default function DrawingCanvas() {
       if (lastTouchDist.current > 0) {
         const zoomDelta = dist / lastTouchDist.current
         const nextZoom = Math.min(Math.max(userZoom * zoomDelta, 1), 8)
-        
+
         const dx = centerX - lastTouchCenter.current.x
         const dy = centerY - lastTouchCenter.current.y
 
@@ -220,6 +228,14 @@ export default function DrawingCanvas() {
     }
   }, [userZoom])
 
+  const handleTouchEnd = useCallback(() => {
+    lastTouchDist.current = 0
+    if (isPinching.current) {
+      setIsDrawingDisabled(false)
+    }
+    isPinching.current = false
+  }, [setIsDrawingDisabled])
+
   // Reset zoom e offset
   const resetZoom = () => {
     setUserZoom(1)
@@ -228,10 +244,9 @@ export default function DrawingCanvas() {
 
   // Draw overlay preview
   useEffect(() => {
-    if (!overlayCanvasRef.current) return
-    const ctx = overlayCanvasRef.current.getContext('2d')
-    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
     if (startPos && currentPos && ['rect', 'circle', 'line'].includes(activeTool)) {
+      const ctx = overlayCanvasRef.current.getContext('2d')
+      ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
       ctx.strokeStyle = color
       ctx.lineWidth = brushSize
       ctx.lineCap = 'round'
@@ -293,7 +308,12 @@ export default function DrawingCanvas() {
         {/* Canvas escalado */}
         <div
           style={styles.canvasWrapper}
+          onPointerDown={handleWrapperPointerDown}
+          onPointerMove={handleWrapperPointerMove}
+          onPointerUp={handleWrapperPointerUp}
+          onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
           <div style={{
             transform: `translate(${offset.x}px, ${offset.y}px) scale(${userZoom})`,
@@ -309,7 +329,7 @@ export default function DrawingCanvas() {
                 height={CANVAS_HEIGHT}
                 style={{
                   ...styles.canvas,
-                  transform: `scale(${scale})`,
+                  transform: `scale(${scale}) translateZ(0)`,
                   transformOrigin: 'top left',
                   cursor: getCursor(activeTool),
                   pointerEvents: activeTool === 'hand' ? 'none' : 'auto',
@@ -325,9 +345,10 @@ export default function DrawingCanvas() {
                   position: 'absolute',
                   top: 0,
                   left: 0,
+                  display: (['rect', 'circle', 'line', 'fill', 'dropper'].includes(activeTool) || activeTool === 'hand') ? 'block' : 'none',
                   background: 'transparent',
                   pointerEvents: (['rect', 'circle', 'line', 'fill', 'dropper'].includes(activeTool) || activeTool === 'hand') ? 'auto' : 'none',
-                  transform: `scale(${scale})`,
+                  transform: `scale(${scale}) translateZ(0)`,
                   transformOrigin: 'top left',
                   cursor: getCursor(activeTool),
                   boxShadow: 'none',
@@ -354,6 +375,8 @@ export default function DrawingCanvas() {
         <Toolbar
           activeTool={activeTool}
           setActiveTool={setActiveTool}
+          color={color}
+          setColor={setColor}
           brushSize={brushSize}
           setBrushSize={setBrushSize}
           canUndo={canUndo}
@@ -363,9 +386,6 @@ export default function DrawingCanvas() {
           onClear={clearCanvas}
           isMobile={isMobile}
         />
-
-        {/* Paleta de cores */}
-        <ColorPopover color={color} setColor={setColor} />
       </div>
 
       {/* Modal: título do desenho */}
@@ -426,8 +446,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: '12px 16px',
-    background: 'rgba(255,255,255,0.9)',
-    backdropFilter: 'blur(12px)',
+    background: 'rgba(255,255,255,0.98)',
     borderBottom: '2px solid var(--color-border)',
     zIndex: 10,
     flexShrink: 0,
@@ -479,10 +498,10 @@ const styles = {
   },
   canvas: {
     display: 'block',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
     borderRadius: '4px',
     background: '#fff',
     touchAction: 'none',
+    willChange: 'transform, contents',
   },
   modalOverlay: {
     position: 'fixed',

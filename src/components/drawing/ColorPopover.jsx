@@ -11,54 +11,60 @@ const PALETTE = [
   '#D97706', '#FCD34D'
 ]
 
-export default function ColorPopover({ color, setColor }) {
+export default function ColorPopover({ color, setColor, isMobile }) {
   const [isOpen, setIsOpen] = useState(false)
   const [customColor, setCustomColor] = useState(color)
 
   return (
     <div style={styles.container}>
       {isOpen && (
-        <div style={styles.popover} className="scale-in">
-          <div style={styles.header}>
-            <span style={styles.title}>Cores</span>
-            <button style={styles.closeBtn} onClick={() => setIsOpen(false)}>
-              <X size={16} />
-            </button>
-          </div>
-          
-          <div style={styles.swatchGrid}>
-            {PALETTE.map((c) => (
-              <button
-                key={c}
-                title={c}
-                style={{
-                  ...styles.swatch,
-                  background: c,
-                  ...(c === color ? styles.swatchActive : {}),
-                  ...(c === '#FFFFFF' ? { border: '1px solid #CBD5E1' } : {}),
-                }}
-                onClick={() => { setColor(c); setCustomColor(c) }}
-              />
-            ))}
-            
-            <label style={styles.customLabel} title="Cor personalizada">
-              <input
-                type="color"
-                value={customColor}
-                onChange={(e) => { setCustomColor(e.target.value); setColor(e.target.value) }}
-                style={styles.colorInput}
-              />
-            </label>
+        <div style={isMobile ? styles.popoverContainer : {}}>
+          <div style={{ ...styles.popover, ...(isMobile ? styles.popoverMobile : styles.popoverDesktop) }} className="scale-in">
+            <div style={styles.header}>
+              <span style={styles.title}>Cores</span>
+              <button style={styles.closeBtn} onClick={() => setIsOpen(false)}>
+                <X size={16} />
+              </button>
+            </div>
+
+            <div style={styles.swatchGrid}>
+              {PALETTE.map((c) => (
+                <button
+                  key={c}
+                  title={c}
+                  style={{
+                    ...styles.swatch,
+                    background: c,
+                    ...(c === color ? styles.swatchActive : {}),
+                    ...(c === '#FFFFFF' ? { border: '1px solid #CBD5E1' } : {}),
+                  }}
+                  onClick={() => { setColor(c); setCustomColor(c) }}
+                />
+              ))}
+
+              <label style={styles.customLabel} title="Cor personalizada">
+                <input
+                  type="color"
+                  value={customColor}
+                  onChange={(e) => { setCustomColor(e.target.value); setColor(e.target.value) }}
+                  style={styles.colorInput}
+                />
+              </label>
+            </div>
           </div>
         </div>
       )}
 
-      <button 
-        style={{ ...styles.toggleBtn, backgroundColor: color }} 
+      <button
+        style={{
+          ...styles.toggleBtn,
+          background: color,
+          border: color === '#FFFFFF' ? '2px solid var(--color-border)' : '2px solid transparent'
+        }}
         onClick={() => setIsOpen(!isOpen)}
         title="Escolher Cor"
       >
-        <Palette size={24} color={isLight(color) ? '#1E293B' : '#FFFFFF'} />
+        <Palette size={20} color={isLight(color) ? '#1E293B' : '#FFFFFF'} />
       </button>
     </div>
   )
@@ -75,35 +81,51 @@ function isLight(color) {
 
 const styles = {
   container: {
-    position: 'absolute',
-    bottom: '24px',
-    left: '84px', // Ao lado da toolbar
-    zIndex: 20,
+    position: 'relative',
     display: 'flex',
-    flexDirection: 'column-reverse', // popover sobe
-    alignItems: 'flex-start',
-    gap: '12px',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   toggleBtn: {
-    width: '56px',
-    height: '56px',
-    borderRadius: '50%',
-    border: '4px solid var(--color-surface)',
-    boxShadow: 'var(--shadow-lg)',
+    width: '44px',
+    height: '44px',
+    borderRadius: '10px',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    transition: 'transform var(--transition-fast)',
+    transition: 'all 0.15s ease',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+  },
+  popoverContainer: {
+    position: 'fixed',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    inset: 0,
+    zIndex: 100,
+    background: 'rgba(0,0,0,0.3)',
+    backdropFilter: 'blur(8px)',
+
   },
   popover: {
-    background: 'rgba(255,255,255,0.95)',
+    position: 'absolute',
+    background: 'rgba(255,255,255,0.98)',
     backdropFilter: 'blur(12px)',
     borderRadius: 'var(--radius-lg)',
     padding: '16px',
     boxShadow: 'var(--shadow-xl)',
     border: '2px solid var(--color-border)',
-    width: '240px',
+    width: '210px',
+    zIndex: 100,
+  },
+  popoverDesktop: {
+    bottom: '0',
+    right: 'calc(100% + 12px)',
+  },
+  popoverMobile: {
+    width: '100%',
+    maxWidth: '300px',
   },
   header: {
     display: 'flex',
@@ -123,6 +145,8 @@ const styles = {
     cursor: 'pointer',
     color: 'var(--color-text-muted)',
     display: 'flex',
+    background: 'transparent',
+    border: 'none',
   },
   swatchGrid: {
     display: 'grid',
@@ -132,21 +156,21 @@ const styles = {
   swatch: {
     width: '100%',
     aspectRatio: '1/1',
-    borderRadius: '50%',
+    borderRadius: '8px',
     cursor: 'pointer',
     border: '2px solid transparent',
     transition: 'transform 0.15s ease',
   },
   swatchActive: {
     border: '2px solid var(--color-text)',
-    transform: 'scale(1.2)',
+    transform: 'scale(1.1)',
   },
   customLabel: {
     position: 'relative',
     cursor: 'pointer',
     width: '100%',
     aspectRatio: '1/1',
-    borderRadius: '50%',
+    borderRadius: '8px',
     background: 'conic-gradient(red, yellow, lime, aqua, blue, magenta, red)',
     boxShadow: 'inset 0 0 0 2px rgba(255,255,255,0.5)',
   },

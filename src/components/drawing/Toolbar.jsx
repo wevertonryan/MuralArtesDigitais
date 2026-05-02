@@ -1,27 +1,30 @@
-import { Paintbrush, Eraser, PaintBucket, Minus, Square, Circle, Pipette, Undo2, Redo2, Trash2, Hand } from 'lucide-react'
+import { memo } from 'react'
+import { Palette, Paintbrush, Eraser, PaintBucket, Minus, Square, Circle, Pipette, Undo2, Redo2, Trash2, Hand } from 'lucide-react'
+import ColorPopover from './ColorPopover'
 
 const TOOLS = [
-  { id: 'pen',     Icon: Paintbrush, label: 'Pincel' },
-  { id: 'eraser',  Icon: Eraser, label: 'Borracha' },
-  { id: 'hand',    Icon: Hand, label: 'Mover' },
+  { id: 'pen',     Icon: Paintbrush,  label: 'Pincel' },
+  { id: 'eraser',  Icon: Eraser,      label: 'Borracha' },
+  { id: 'hand',    Icon: Hand,        label: 'Mover' },
   { id: 'fill',    Icon: PaintBucket, label: 'Balde' },
-  { id: 'line',    Icon: Minus,  label: 'Linha' },
-  { id: 'rect',    Icon: Square,  label: 'Retângulo' },
-  { id: 'circle',  Icon: Circle,  label: 'Círculo' },
-  { id: 'dropper', Icon: Pipette, label: 'Conta-gotas' },
+  { id: 'line',    Icon: Minus,       label: 'Linha' },
+  { id: 'rect',    Icon: Square,      label: 'Retângulo' },
+  { id: 'circle',  Icon: Circle,      label: 'Círculo' },
+  { id: 'dropper', Icon: Pipette,     label: 'Conta-gotas' }
 ]
 
-export default function Toolbar({
+function Toolbar({
   activeTool, setActiveTool,
+  color, setColor,
   brushSize, setBrushSize,
   canUndo, canRedo,
   onUndo, onRedo, onClear,
   isMobile
 }) {
   return (
-    <div style={{ ...styles.toolbar, ...(isMobile ? styles.toolbarMobile : {}) }}>
-      {/* Ferramentas */}
-      <div style={{ ...styles.group, ...(isMobile ? styles.groupMobile : {}) }}>
+    <div style={{ ...styles.toolbar, ...(isMobile ? styles.toolbarMobile : styles.toolbarDesktop) }}>
+      <div style={{ ...styles.grid, ...(isMobile ? styles.gridMobile : styles.gridDesktop) }}>
+        {/* Ferramentas principais */}
         {TOOLS.map(({ id, Icon, label }) => (
           <button
             key={id}
@@ -38,88 +41,85 @@ export default function Toolbar({
             </span>
           </button>
         ))}
+
+        {/* Seletor de cores integrado */}
+        <ColorPopover color={color} setColor={setColor} isMobile={isMobile} />
+
+        {/* Ações de Histórico e Limpar */}
+        <button id="btn-undo" style={{ ...styles.actionBtn, ...(canUndo ? {} : styles.actionBtnDisabled) }}
+          onClick={onUndo} disabled={!canUndo} title="Desfazer">
+          <Undo2 size={20} color={canUndo ? 'var(--color-text)' : 'var(--color-text-muted)'} />
+        </button>
+        <button id="btn-redo" style={{ ...styles.actionBtn, ...(canRedo ? {} : styles.actionBtnDisabled) }}
+          onClick={onRedo} disabled={!canRedo} title="Refazer">
+          <Redo2 size={20} color={canRedo ? 'var(--color-text)' : 'var(--color-text-muted)'} />
+        </button>
+        <button id="btn-clear" style={{ ...styles.actionBtn }}
+          onClick={onClear} title="Limpar tudo">
+          <Trash2 size={20} color="#EF4444" />
+        </button>
       </div>
 
-      {/* Divisor */}
-      <div style={{ ...styles.divider, ...(isMobile ? styles.dividerMobile : {}) }} />
-
-      {/* Tamanho do pincel */}
+      {/* Tamanho do pincel - Fora do grid principal para ter mais espaço */}
       {['pen', 'eraser', 'line', 'rect', 'circle'].includes(activeTool) && (
-        <div style={{ ...styles.sizeGroup, ...(isMobile ? styles.sizeGroupMobile : {}) }}>
-          <span style={styles.sizeLabel}>{brushSize}px</span>
-          <input
-            id="brush-size-slider"
-            type="range"
-            min={1}
-            max={60}
-            value={brushSize}
-            onChange={(e) => setBrushSize(Number(e.target.value))}
-            style={isMobile ? styles.sliderMobile : styles.slider}
-          />
-          {/* Preview do tamanho */}
-          <div style={{
-            ...styles.sizePreview,
-            width: `${Math.min(brushSize, 36)}px`,
-            height: `${Math.min(brushSize, 36)}px`,
-            backgroundColor: 'var(--color-text)'
-          }} />
-        </div>
+        <>
+          <div style={{ ...styles.divider, ...(isMobile ? styles.dividerMobile : styles.dividerDesktop) }} />
+          <div style={{ ...styles.sizeGroup, ...(isMobile ? styles.sizeGroupMobile : styles.sizeGroupDesktop) }}>
+            <span style={styles.sizeLabel}>{brushSize}px</span>
+            <input
+              id="brush-size-slider"
+              type="range"
+              min={1}
+              max={60}
+              value={brushSize}
+              onChange={(e) => setBrushSize(Number(e.target.value))}
+              style={isMobile ? styles.sliderMobile : styles.sliderDesktop}
+            />
+          </div>
+        </>
       )}
-
-      <div style={{ ...styles.divider, ...(isMobile ? styles.dividerMobile : {}) }} />
-
-      {/* Ações */}
-      <button id="btn-undo" style={{ ...styles.actionBtn, ...(canUndo ? {} : styles.actionBtnDisabled) }}
-        onClick={onUndo} disabled={!canUndo} title="Desfazer">
-        <Undo2 size={20} color={canUndo ? 'var(--color-text)' : 'var(--color-text-muted)'} />
-      </button>
-      <button id="btn-redo" style={{ ...styles.actionBtn, ...(canRedo ? {} : styles.actionBtnDisabled) }}
-        onClick={onRedo} disabled={!canRedo} title="Refazer">
-        <Redo2 size={20} color={canRedo ? 'var(--color-text)' : 'var(--color-text-muted)'} />
-      </button>
-      <button id="btn-clear" style={{ ...styles.actionBtn }}
-        onClick={onClear} title="Limpar tudo">
-        <Trash2 size={20} color="#EF4444" />
-      </button>
     </div>
   )
 }
 
+export default memo(Toolbar)
+
 const styles = {
   toolbar: {
-    width: '60px',
     display: 'flex',
-    flexDirection: 'column',
+    flexWrap: 'wrap',
     alignItems: 'center',
-    padding: '12px 0',
-    gap: '4px',
-    background: 'rgba(255,255,255,0.95)',
-    borderLeft: '2px solid var(--color-border)',
-    backdropFilter: 'blur(12px)',
-    overflowY: 'auto',
+    justifyContent: 'center',
+    gap: '8px',
+    background: 'rgba(255,255,255,0.98)',
     flexShrink: 0,
+    padding: '12px',
+    zIndex: 100,
+  },
+  toolbarDesktop: {
+    height: '100%',
+    flexDirection: 'column',
+    borderLeft: '2px solid var(--color-border)',
+    padding: '16px 8px',
   },
   toolbarMobile: {
     width: '100%',
-    height: '60px',
+    height: 'max-content',
     flexDirection: 'row',
-    padding: '0 12px',
-    borderLeft: 'none',
     borderTop: '2px solid var(--color-border)',
-    overflowY: 'hidden',
-    overflowX: 'auto',
+    padding: '12px',
   },
-  group: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
-    width: '100%',
+  grid: {
+    display: 'grid',
+    gap: '6px',
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  groupMobile: {
-    flexDirection: 'row',
-    width: 'auto',
-    height: '100%',
+  gridDesktop: {
+    gridTemplateColumns: 'repeat(2, 1fr)',
+  },
+  gridMobile: {
+    gridTemplateColumns: 'repeat(6, 1fr)',
   },
   toolBtn: {
     width: '44px',
@@ -149,22 +149,36 @@ const styles = {
   },
   dividerMobile: {
     width: '2px',
-    height: '36px',
+    height: '32px',
+    background: 'var(--color-border)',
+    borderRadius: '1px',
     margin: '0 4px',
+  },
+  dividerDesktop: {
+    width: '32px',
+    height: '2px',
+    background: 'var(--color-border)',
+    borderRadius: '1px',
+    margin: '4px 0',
   },
   sizeGroup: {
     display: 'flex',
-    flexDirection: 'column',
     alignItems: 'center',
     gap: '4px',
     padding: '4px 0',
     width: '100%',
   },
   sizeGroupMobile: {
-    flexDirection: 'row',
-    padding: '0 4px',
+    flexDirection: 'column',
+    padding: '0 8px',
     width: 'auto',
-    height: '100%',
+    gap: '8px',
+  },
+  sizeGroupDesktop: {
+    flexDirection: 'column',
+    padding: '8px 0',
+    width: '100%',
+    gap: '8px',
   },
   sizeLabel: {
     fontFamily: 'Nunito, sans-serif',
@@ -172,32 +186,21 @@ const styles = {
     fontSize: '10px',
     color: 'var(--color-text-muted)',
   },
-  slider: {
-    width: '40px',
-    writingMode: 'vertical-lr',
-    direction: 'rtl',
+  sliderDesktop: {
+    width: '60px',
+    height: '40px',
     cursor: 'pointer',
-    height: '80px',
     accentColor: 'var(--color-primary)',
   },
   sliderMobile: {
-    width: '80px',
-    height: '40px',
-    writingMode: 'horizontal-tb',
-    direction: 'ltr',
+    height: '70px',
     cursor: 'pointer',
+    writingMode: 'vertical-lr',
     accentColor: 'var(--color-primary)',
   },
-  sizePreview: {
-    borderRadius: '50%',
-    background: 'var(--color-text)',
-    transition: 'all 0.15s ease',
-    minWidth: '4px',
-    minHeight: '4px',
-  },
   actionBtn: {
-    width: '40px',
-    height: '40px',
+    width: '44px',
+    height: '44px',
     borderRadius: '10px',
     border: '2px solid transparent',
     background: 'transparent',
