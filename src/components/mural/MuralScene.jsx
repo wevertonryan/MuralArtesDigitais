@@ -1,5 +1,5 @@
 import { useRef, useMemo, Suspense } from 'react'
-import { Canvas } from '@react-three/fiber'
+import { Canvas, useFrame } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import MuralCamera from './MuralCamera'
 import MuralBackground from './MuralBackground'
@@ -23,9 +23,7 @@ export default function MuralScene() {
       dpr={[1, 2]}
       style={{ background: '#BAE6FD' }}
     >
-      <ambientLight intensity={0.8} color="#E0F2FE" />
-      <directionalLight position={[5, 8, 5]} intensity={1.2} color="#FFFFFF" castShadow />
-      <directionalLight position={[-5, -4, 3]} intensity={0.3} color="#FCD34D" />
+      <SceneLighting />
 
       <MuralBackground />
       <MuralCamera />
@@ -57,5 +55,40 @@ export default function MuralScene() {
         <PlacementGhost artwork={pendingArtwork} existingArtes={artes} />
       )}
     </Canvas>
+  )
+}
+
+function SceneLighting() {
+  const lightRef = useRef()
+
+  // A luz segue a câmera para manter a sombra sempre no frustum visível
+  useFrame(({ camera }) => {
+    if (lightRef.current) {
+      lightRef.current.position.set(camera.position.x + 10, camera.position.y + 20, 15)
+      lightRef.current.target.position.set(camera.position.x, camera.position.y, 0)
+      lightRef.current.target.updateMatrixWorld()
+    }
+  })
+
+  return (
+    <>
+      <ambientLight intensity={0.4} color="#FFFFFF" />
+      <directionalLight
+        ref={lightRef}
+        intensity={1.2}
+        color="#FFFFFF"
+        castShadow
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
+        shadow-camera-far={40}
+        shadow-camera-near={0.1}
+        shadow-camera-left={-25}
+        shadow-camera-right={25}
+        shadow-camera-top={25}
+        shadow-camera-bottom={-25}
+        shadow-bias={-0.001}
+      />
+      <pointLight position={[-10, -10, 5]} intensity={0.4} color="#BAE6FD" />
+    </>
   )
 }

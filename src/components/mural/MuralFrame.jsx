@@ -69,23 +69,23 @@ export default function MuralFrame({ arte, onClick }) {
       onPointerOut={() => (document.body.style.cursor = 'auto')}
     >
 
-      {/* Moldura (toon shading) */}
-      <mesh castShadow>
+      {/* Moldura */}
+      <mesh castShadow receiveShadow>
         <boxGeometry args={[totalW, totalH, FRAME_DEPTH]} />
-        <meshToonMaterial color={FRAME_COLOR} />
+        <meshStandardMaterial color={FRAME_COLOR} roughness={0.2} metalness={0.1} />
       </mesh>
-
+ 
       {/* Imagem da arte */}
       {texture && (
-        <mesh position={[0, 0, FRAME_DEPTH / 2 + 0.01]}>
+        <mesh position={[0, 0, FRAME_DEPTH / 2 + 0.01]} receiveShadow>
           <planeGeometry args={[FRAME_WORLD_WIDTH, FRAME_WORLD_HEIGHT]} />
-          <meshBasicMaterial map={texture} />
+          <meshStandardMaterial map={texture} roughness={1} metalness={0} />
         </mesh>
       )}
 
       {/* Metadados 2D via Html overlay */}
       <Html
-        position={[-totalW / 2, totalH / 2 + 0.5, 0]}
+        position={[0, totalH / 2 + 0.5, 0]}
         transform={true}
         occlude={false}
         style={{ pointerEvents: 'none', userSelect: 'none' }}
@@ -94,10 +94,10 @@ export default function MuralFrame({ arte, onClick }) {
       </Html>
 
       <Html
-        position={[-totalW / 2, -totalH / 2 - 0.15, 0]}
+        position={[0, -totalH / 2 - 0.5, 0]}
         transform={true}
         occlude={false}
-        style={{ ...styles.metaRow, width: '300px' }}
+        style={{ ...styles.metaRow, width: '275px' }}
       >
         <div style={styles.author}>@{arte.autor}</div>
 
@@ -117,8 +117,6 @@ export default function MuralFrame({ arte, onClick }) {
 
 const styles = {
   title: {
-    position: 'relative',
-    bottom: '5px',
     fontFamily: 'Nunito, sans-serif',
     fontSize: '11px',
     fontWeight: '700',
