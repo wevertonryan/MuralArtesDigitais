@@ -43,6 +43,7 @@ export default function DrawingCanvas() {
     clearCanvas,
     floodFill,
     pickColor,
+    autoSave,
     saveSnapshot,
     exportWebP,
     setIsDrawingDisabled,
@@ -278,6 +279,7 @@ export default function DrawingCanvas() {
       setShowWelcome(true)
       return
     }
+
     setShowTitleModal(true)
   }
 
@@ -288,6 +290,7 @@ export default function DrawingCanvas() {
 
     setPendingArtwork({ ...result, titulo: titleInput.trim() })
     setShowTitleModal(false)
+    
     setView('placement')
   }
 
@@ -295,7 +298,10 @@ export default function DrawingCanvas() {
     <div style={styles.root}>
       {/* Header */}
       <div style={styles.header}>
-        <button style={styles.backBtn} onClick={() => setView('mural')}>
+        <button style={styles.backBtn} onClick={() => {
+          autoSave()
+          setView('mural')}
+        }>
           ← Voltar
         </button>
         <span style={styles.headerTitle}>🎨 Criar Arte</span>

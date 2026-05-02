@@ -1,63 +1,34 @@
-import { useRef, useState, useEffect } from 'react'
-import { useSpring, animated } from '@react-spring/three'
+import React, { useMemo } from 'react'
 import { useTexture, Html } from '@react-three/drei'
-import { useThree, useFrame } from '@react-three/fiber'
-import * as THREE from 'three'
 import { FRAME_WORLD_WIDTH, FRAME_WORLD_HEIGHT } from '@/utils/layoutEngine'
-import { isInView } from '@/utils/proximitySearch'
 
 const FRAME_DEPTH = 0.2
 const BORDER_SIZE = 0.25
 const FRAME_COLOR = '#FFFFFF'
 
-export default function MuralFrame({ arte, onClick }) {
-  const meshRef = useRef()
-  const { camera, size } = useThree()
-  const [visible, setVisible] = useState(true)
+export default React.memo(function MuralFrame({ arte, onClick }) {
   const texture = useTexture(arte.url_imagem)
 
-  // ===== ANIMAÇÃO DE ENTRADA (spring "pendurar") =====
-  // Simplificando animação para diagnóstico
-  const { scale, posY } = useSpring({
-    from: { scale: 0.1, posY: 1 },
-    to: { scale: 1, posY: 0 },
-    config: { tension: 200, friction: 25 },
-  })
-
-  const position = [arte.pos_x, arte.pos_y, -2 + FRAME_DEPTH]
-
-  // ===== CULLING com buffer =====
-  useFrame(() => {
-    const camPos = { x: camera.position.x, y: camera.position.y }
-    const fovRad = THREE.MathUtils.degToRad(camera.fov || 60)
-    const aspect = size.width / size.height
-    const viewH = 2 * Math.tan(fovRad / 2) * camera.position.z
-    const viewW = viewH * aspect
-
-    const inView = isInView(
-      { x: position[0], y: position[1] },
-      camPos,
-      { width: viewW + FRAME_WORLD_WIDTH, height: viewH + FRAME_WORLD_HEIGHT },
-      0.5 // 50% de buffer
-    )
-
-    if (visible !== inView) setVisible(inView)
-  })
+  const position = useMemo(() => 
+    [arte.pos_x, arte.pos_y, -2 + FRAME_DEPTH], 
+    [arte.pos_x, arte.pos_y]
+  )
 
   const totalW = FRAME_WORLD_WIDTH + BORDER_SIZE
   const totalH = FRAME_WORLD_HEIGHT + BORDER_SIZE
 
-  // Soma de reações totais
-  const totalReacoes = Object.values(arte.reacoes || {}).reduce((a, b) => a + b, 0)
-  const topEmojis = Object.entries(arte.reacoes || {})
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 3)
+  const { totalReacoes, topEmojis } = useMemo(() => {
+    const reacoes = arte.reacoes || {}
+    const total = Object.values(reacoes).reduce((a, b) => a + b, 0)
+    const top = Object.entries(reacoes)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 3)
+    return { totalReacoes: total, topEmojis: top }
+  }, [arte.reacoes])
 
   return (
-    <animated.group
+    <group
       position={position}
-      scale={scale}
-      visible={visible} // Apenas esconde, não desmonta
       onClick={(e) => { e.stopPropagation(); onClick() }}
       onPointerOver={() => (document.body.style.cursor = 'pointer')}
       onPointerOut={() => (document.body.style.cursor = 'auto')}
@@ -105,9 +76,9 @@ export default function MuralFrame({ arte, onClick }) {
           </div>
         )}
       </Html>
-    </animated.group>
+    </group>
   )
-}
+})
 
 const styles = {
   title: {

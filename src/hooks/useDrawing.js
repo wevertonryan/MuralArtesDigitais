@@ -214,6 +214,7 @@ export function useDrawing(canvasRef) {
     floodFill,
     pickColor,
     saveSnapshot,
+    autoSave,
     exportWebP,
     clearDraft,
     setIsDrawingDisabled,
