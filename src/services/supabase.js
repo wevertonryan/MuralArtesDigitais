@@ -27,11 +27,14 @@ export async function getInitialArtes(regiao = null) {
 /**
  * Escuta novas artes inseridas no banco
  */
-export function listenToNewArtes(onAdd) {
+export function listenToNewArtes(onAdd, onUpdate) {
   const channel = supabase
     .channel('public:mural_artes')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mural_artes' }, payload => {
-      onAdd(payload.new)
+      if (onAdd) onAdd(payload.new)
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'mural_artes' }, payload => {
+      if (onUpdate) onUpdate(payload.new)
     })
     .subscribe()
 

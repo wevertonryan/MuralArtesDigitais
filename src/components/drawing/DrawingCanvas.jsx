@@ -13,6 +13,13 @@ export default function DrawingCanvas() {
   const containerRef = useRef(null)
   const [scale, setScale] = useState(1)
   const [showWelcome, setShowWelcome] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const [startPos, setStartPos] = useState(null)
   const [currentPos, setCurrentPos] = useState(null)
@@ -188,7 +195,7 @@ export default function DrawingCanvas() {
         </button>
       </div>
 
-      <div style={styles.body} ref={containerRef}>
+      <div style={{ ...styles.body, flexDirection: isMobile ? 'column' : 'row' }} ref={containerRef}>
         {/* Canvas escalado */}
         <div style={styles.canvasWrapper}>
           <canvas
@@ -201,7 +208,6 @@ export default function DrawingCanvas() {
               transformOrigin: 'top left',
               cursor: getCursor(activeTool),
             }}
-            onClick={handleCanvasClick}
             onPointerUp={handlePointerUp} // Use the new handler for pen/eraser
           />
           <canvas
@@ -214,12 +220,13 @@ export default function DrawingCanvas() {
               top: 0,
               left: 0,
               background: 'transparent',
-              pointerEvents: ['rect', 'circle', 'line'].includes(activeTool) ? 'auto' : 'none',
+              pointerEvents: ['rect', 'circle', 'line', 'fill', 'dropper'].includes(activeTool) ? 'auto' : 'none',
               transform: `scale(${scale})`,
               transformOrigin: 'top left',
               cursor: getCursor(activeTool),
               boxShadow: 'none',
             }}
+            onClick={handleCanvasClick}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
@@ -237,6 +244,7 @@ export default function DrawingCanvas() {
           onUndo={undo}
           onRedo={redo}
           onClear={clearCanvas}
+          isMobile={isMobile}
         />
 
         {/* Paleta de cores */}

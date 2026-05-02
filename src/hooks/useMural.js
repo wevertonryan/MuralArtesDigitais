@@ -8,7 +8,7 @@ import { syncArtes, upsertArte } from '@/services/dexieService'
  * Deve ser montado uma única vez no topo da aplicação.
  */
 export function useMural() {
-  const { setArtes, addArte, regiao } = useMuralStore()
+  const { setArtes, addArte, updateArte, regiao } = useMuralStore()
   const unsubscribeRef = useRef(null)
 
   const loadInitial = useCallback(async () => {
@@ -26,11 +26,17 @@ export function useMural() {
   useEffect(() => {
     loadInitial()
 
-    // Listener em tempo real para novas artes
-    unsubscribeRef.current = listenToNewArtes((newArte) => {
-      addArte(newArte)
-      upsertArte(newArte).catch(console.warn)
-    })
+    // Listener em tempo real para novas artes e reações
+    unsubscribeRef.current = listenToNewArtes(
+      (newArte) => {
+        addArte(newArte)
+        upsertArte(newArte).catch(console.warn)
+      },
+      (updatedArte) => {
+        updateArte(updatedArte)
+        upsertArte(updatedArte).catch(console.warn)
+      }
+    )
 
     return () => {
       unsubscribeRef.current?.()

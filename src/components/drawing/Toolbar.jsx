@@ -14,12 +14,13 @@ export default function Toolbar({
   activeTool, setActiveTool,
   brushSize, setBrushSize,
   canUndo, canRedo,
-  onUndo, onRedo, onClear
+  onUndo, onRedo, onClear,
+  isMobile
 }) {
   return (
-    <div style={styles.toolbar}>
+    <div style={{ ...styles.toolbar, ...(isMobile ? styles.toolbarMobile : {}) }}>
       {/* Ferramentas */}
-      <div style={styles.group}>
+      <div style={{ ...styles.group, ...(isMobile ? styles.groupMobile : {}) }}>
         {TOOLS.map(({ id, Icon, label }) => (
           <button
             key={id}
@@ -39,11 +40,11 @@ export default function Toolbar({
       </div>
 
       {/* Divisor */}
-      <div style={styles.divider} />
+      <div style={{ ...styles.divider, ...(isMobile ? styles.dividerMobile : {}) }} />
 
       {/* Tamanho do pincel */}
       {['pen', 'eraser', 'line', 'rect', 'circle'].includes(activeTool) && (
-        <div style={styles.sizeGroup}>
+        <div style={{ ...styles.sizeGroup, ...(isMobile ? styles.sizeGroupMobile : {}) }}>
           <span style={styles.sizeLabel}>{brushSize}px</span>
           <input
             id="brush-size-slider"
@@ -52,7 +53,7 @@ export default function Toolbar({
             max={60}
             value={brushSize}
             onChange={(e) => setBrushSize(Number(e.target.value))}
-            style={styles.slider}
+            style={isMobile ? styles.sliderMobile : styles.slider}
           />
           {/* Preview do tamanho */}
           <div style={{
@@ -64,7 +65,7 @@ export default function Toolbar({
         </div>
       )}
 
-      <div style={styles.divider} />
+      <div style={{ ...styles.divider, ...(isMobile ? styles.dividerMobile : {}) }} />
 
       {/* Ações */}
       <button id="btn-undo" style={{ ...styles.actionBtn, ...(canUndo ? {} : styles.actionBtnDisabled) }}
@@ -97,12 +98,27 @@ const styles = {
     overflowY: 'auto',
     flexShrink: 0,
   },
+  toolbarMobile: {
+    width: '100%',
+    height: '60px',
+    flexDirection: 'row',
+    padding: '0 12px',
+    borderLeft: 'none',
+    borderTop: '2px solid var(--color-border)',
+    overflowY: 'hidden',
+    overflowX: 'auto',
+  },
   group: {
     display: 'flex',
     flexDirection: 'column',
     gap: '4px',
     width: '100%',
     alignItems: 'center',
+  },
+  groupMobile: {
+    flexDirection: 'row',
+    width: 'auto',
+    height: '100%',
   },
   toolBtn: {
     width: '44px',
@@ -130,6 +146,11 @@ const styles = {
     borderRadius: '1px',
     margin: '4px 0',
   },
+  dividerMobile: {
+    width: '2px',
+    height: '36px',
+    margin: '0 4px',
+  },
   sizeGroup: {
     display: 'flex',
     flexDirection: 'column',
@@ -137,6 +158,12 @@ const styles = {
     gap: '4px',
     padding: '4px 0',
     width: '100%',
+  },
+  sizeGroupMobile: {
+    flexDirection: 'row',
+    padding: '0 4px',
+    width: 'auto',
+    height: '100%',
   },
   sizeLabel: {
     fontFamily: 'Nunito, sans-serif',
@@ -150,6 +177,14 @@ const styles = {
     direction: 'rtl',
     cursor: 'pointer',
     height: '80px',
+    accentColor: 'var(--color-primary)',
+  },
+  sliderMobile: {
+    width: '80px',
+    height: '40px',
+    writingMode: 'horizontal-tb',
+    direction: 'ltr',
+    cursor: 'pointer',
     accentColor: 'var(--color-primary)',
   },
   sizePreview: {

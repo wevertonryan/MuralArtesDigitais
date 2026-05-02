@@ -46,6 +46,8 @@ export default function App() {
           position: 'absolute',
           inset: 0,
           display: view === 'mural' || view === 'placement' ? 'block' : 'none',
+          visibility: sessionUser ? 'visible' : 'hidden',
+          pointerEvents: sessionUser ? 'auto' : 'none'
         }}
       >
         <MuralScene />

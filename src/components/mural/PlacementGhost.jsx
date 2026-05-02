@@ -6,6 +6,7 @@ import { useMuralStore } from '@/store/muralStore'
 import { isPositionValid } from '@/utils/layoutEngine'
 import { FRAME_WORLD_WIDTH, FRAME_WORLD_HEIGHT } from '@/utils/layoutEngine'
 import { uploadArtworkToStorage, insertArtwork } from '@/services/supabase'
+import { upsertArte } from '@/services/dexieService'
 import { v4 as uuidv4 } from 'uuid'
 
 export default function PlacementGhost({ artwork, existingArtes }) {
@@ -55,36 +56,53 @@ export default function PlacementGhost({ artwork, existingArtes }) {
 
     try {
       const [x, y] = displayPos
-
-      // 1. Faz upload da imagem no Supabase Storage
       const filename = `${uuidv4()}.webp`
-      const publicUrl = await uploadArtworkToStorage(artwork.dataURL, filename)
+      const id = filename.replace('.webp', '')
 
-      // 2. Insere a arte no Supabase Database
-      const newArte = await insertArtwork({
-        id: filename.replace('.webp', ''),
+      // 1. Armazena e exibe localmente primeiro (Dexie + Store)
+      const localArte = {
+        id: id,
         titulo: artwork.titulo,
         autor: sessionUser?.pseudonimo ?? 'Anônimo',
-        url_imagem: publicUrl,
+        url_imagem: artwork.dataURL, // Base64 para exibir na hora
         pos_x: x,
         pos_y: y,
         largura: 1280,
         altura: 720,
         aprovado: true, // Moderação manual ou pós-publicação
         reacoes: {},
-      })
-
-      if (newArte) {
-        // Arte aparecerá via listener em tempo real (listenToNewArtes)
-        clearPendingArtwork()
-        setView('mural')
+        criado_em: new Date().toISOString(),
       }
+
+      await upsertArte(localArte)
+      addArte(localArte)
+
+      clearPendingArtwork()
+      setView('mural')
+
+      // 2. Posteriormente, envia para o Supabase (em background)
+      uploadArtworkToStorage(artwork.dataURL, filename)
+        .then(publicUrl => {
+          const arteParaSupabase = { ...localArte, url_imagem: publicUrl }
+          return insertArtwork(arteParaSupabase)
+        })
+        .then(savedArte => {
+          // Atualiza cache local com a URL definitiva do Supabase
+          upsertArte(savedArte).catch(console.warn)
+          addArte(savedArte)
+        })
+        .catch(err => {
+          console.error('[PlacementGhost] Falha no envio para o Supabase:', err)
+          // Em caso de falha silenciosa (ex: IA bloqueou), a arte continua no Dexie local
+          // da sessão atual, mas não vai pro backend, atendendo a regra de negócio.
+        })
+
     } catch (err) {
       console.error('[PlacementGhost] Falha ao publicar:', err)
     } finally {
       setIsPublishing(false)
     }
-  }, [isValid, isPublishing, displayPos, artwork, sessionUser, clearPendingArtwork, setView])
+  }, [isValid, isPublishing, displayPos, artwork, sessionUser, clearPendingArtwork, setView, addArte])
 
   const handleCancel = () => {
     clearPendingArtwork()

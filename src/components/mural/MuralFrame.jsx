@@ -8,24 +8,7 @@ import { isInView } from '@/utils/proximitySearch'
 
 const FRAME_DEPTH = 0.2
 const BORDER_SIZE = 0.25
-const OUTLINE_COLOR = '#2D1B69'
 const FRAME_COLOR = '#FFFFFF'
-
-// ===== OUTLINE via ShaderMaterial =====
-const OutlineMaterial = new THREE.ShaderMaterial({
-  side: THREE.BackSide,
-  uniforms: { color: { value: new THREE.Color(OUTLINE_COLOR) } },
-  vertexShader: `
-    void main() {
-      vec3 newPos = position + normal * 0.04;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(newPos, 1.0);
-    }
-  `,
-  fragmentShader: `
-    uniform vec3 color;
-    void main() { gl_FragColor = vec4(color, 1.0); }
-  `,
-})
 
 export default function MuralFrame({ arte, onClick }) {
   const meshRef = useRef()
@@ -60,8 +43,8 @@ export default function MuralFrame({ arte, onClick }) {
     const inView = isInView(
       { x: position[0], y: position[1] },
       camPos,
-      { width: viewW, height: viewH },
-      0.5 // 30% de buffer
+      { width: viewW + FRAME_WORLD_WIDTH, height: viewH + FRAME_WORLD_HEIGHT },
+      0.5 // 50% de buffer
     )
 
     if (visible !== inView) setVisible(inView)
@@ -103,7 +86,7 @@ export default function MuralFrame({ arte, onClick }) {
       {/* Metadados 2D via Html overlay */}
       <Html
         position={[-totalW / 2, totalH / 2 + 0.5, 0]}
-        transform={false}
+        transform={true}
         occlude={false}
         style={{ pointerEvents: 'none', userSelect: 'none' }}
       >
@@ -112,7 +95,7 @@ export default function MuralFrame({ arte, onClick }) {
 
       <Html
         position={[-totalW / 2, -totalH / 2 - 0.15, 0]}
-        transform={false}
+        transform={true}
         occlude={false}
         style={{ ...styles.metaRow, width: '300px' }}
       >
@@ -134,6 +117,8 @@ export default function MuralFrame({ arte, onClick }) {
 
 const styles = {
   title: {
+    position: 'relative',
+    bottom: '5px',
     fontFamily: 'Nunito, sans-serif',
     fontSize: '11px',
     fontWeight: '700',

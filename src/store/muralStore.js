@@ -22,6 +22,10 @@ export const useMuralStore = create((set, get) => ({
   addArte: (arte) => set((s) => ({
     artes: s.artes.find(a => a.id === arte.id) ? s.artes : [arte, ...s.artes],
   })),
+  updateArte: (arte) => set((s) => ({
+    artes: s.artes.map(a => a.id === arte.id ? { ...a, ...arte } : a),
+    selectedArte: s.selectedArte?.id === arte.id ? { ...s.selectedArte, ...arte } : s.selectedArte
+  })),
   setArtes: (artes) => set({ artes }),
 
   // ===== ARTE SELECIONADA (detalhe) =====
