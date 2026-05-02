@@ -6,7 +6,7 @@ import * as THREE from 'three'
 import { FRAME_WORLD_WIDTH, FRAME_WORLD_HEIGHT } from '@/utils/layoutEngine'
 import { isInView } from '@/utils/proximitySearch'
 
-const FRAME_DEPTH = 0.18
+const FRAME_DEPTH = 0.2
 const BORDER_SIZE = 0.25
 const OUTLINE_COLOR = '#2D1B69'
 const FRAME_COLOR = '#FFFFFF'
@@ -47,7 +47,7 @@ export default function MuralFrame({ arte, onClick }) {
     config: { tension: 200, friction: 25 },
   })
 
-  const position = [arte.pos_x, arte.pos_y, 0]
+  const position = [arte.pos_x, arte.pos_y, -2 + FRAME_DEPTH]
 
   // ===== CULLING com buffer =====
   useFrame(() => {
@@ -61,7 +61,7 @@ export default function MuralFrame({ arte, onClick }) {
       { x: position[0], y: position[1] },
       camPos,
       { width: viewW, height: viewH },
-      0.3 // 30% de buffer
+      0.5 // 30% de buffer
     )
 
     if (visible !== inView) setVisible(inView)
@@ -78,29 +78,18 @@ export default function MuralFrame({ arte, onClick }) {
 
   return (
     <animated.group
-      position={[position[0], position[1] + posY.to(v => v), position[2]]}
+      position={position}
       scale={scale}
       visible={visible} // Apenas esconde, não desmonta
       onClick={(e) => { e.stopPropagation(); onClick() }}
       onPointerOver={() => (document.body.style.cursor = 'pointer')}
       onPointerOut={() => (document.body.style.cursor = 'auto')}
     >
-      {/* Debug: Cubo simples para ver se o quadro existe no espaço */}
-      <mesh position={[arte.pos_x, arte.pos_y, 0.5]}>
-        <boxGeometry args={[1, 1, 1]} />
-        <meshBasicMaterial color="red" />
-      </mesh>
 
       {/* Moldura (toon shading) */}
       <mesh castShadow>
         <boxGeometry args={[totalW, totalH, FRAME_DEPTH]} />
         <meshToonMaterial color={FRAME_COLOR} />
-      </mesh>
-
-      {/* Outline (cartoon) */}
-      <mesh>
-        <boxGeometry args={[totalW, totalH, FRAME_DEPTH]} />
-        <primitive object={OutlineMaterial} attach="material" />
       </mesh>
 
       {/* Imagem da arte */}
@@ -113,7 +102,7 @@ export default function MuralFrame({ arte, onClick }) {
 
       {/* Metadados 2D via Html overlay */}
       <Html
-        position={[-totalW / 2, totalH / 2 + 0.15, 0]}
+        position={[-totalW / 2, totalH / 2 + 0.5, 0]}
         transform={false}
         occlude={false}
         style={{ pointerEvents: 'none', userSelect: 'none' }}
@@ -125,18 +114,11 @@ export default function MuralFrame({ arte, onClick }) {
         position={[-totalW / 2, -totalH / 2 - 0.15, 0]}
         transform={false}
         occlude={false}
-        style={{ pointerEvents: 'none', userSelect: 'none' }}
+        style={{ ...styles.metaRow, width: '300px' }}
       >
         <div style={styles.author}>@{arte.autor}</div>
-      </Html>
 
-      {totalReacoes > 0 && (
-        <Html
-          position={[totalW / 2, -totalH / 2 - 0.15, 0]}
-          transform={false}
-          occlude={false}
-          style={{ pointerEvents: 'none', userSelect: 'none' }}
-        >
+        {totalReacoes > 0 && (
           <div style={styles.reactions}>
             {topEmojis.map(([emoji, count]) => (
               <span key={emoji} style={styles.reactionChip}>
@@ -144,8 +126,8 @@ export default function MuralFrame({ arte, onClick }) {
               </span>
             ))}
           </div>
-        </Html>
-      )}
+        )}
+      </Html>
     </animated.group>
   )
 }
@@ -164,6 +146,14 @@ const styles = {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     backdropFilter: 'blur(4px)',
+  },
+  metaRow: {
+    pointerEvents: 'none',
+    userSelect: 'none',
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between'
   },
   author: {
     fontFamily: 'Nunito, sans-serif',
