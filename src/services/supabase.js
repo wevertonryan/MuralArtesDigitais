@@ -31,14 +31,19 @@ export function listenToNewArtes(onAdd, onUpdate) {
   const channel = supabase
     .channel('public:mural_artes')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mural_artes' }, payload => {
+      console.log('✨ Nova arte recebida via Realtime:', payload.new.id)
       if (onAdd) onAdd(payload.new)
     })
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'mural_artes' }, payload => {
+      console.log('🔄 Arte atualizada via Realtime (Reações):', payload.new.id)
       if (onUpdate) onUpdate(payload.new)
     })
-    .subscribe()
+    .subscribe((status) => {
+      console.log('📡 Status da conexão Realtime:', status)
+    })
 
   return () => {
+    console.log('🔌 Desconectando canal Realtime')
     supabase.removeChannel(channel)
   }
 }
