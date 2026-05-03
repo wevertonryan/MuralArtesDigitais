@@ -19,16 +19,16 @@ export default function MuralBackground() {
       {/* Plano de fundo plano (Z bem atrás) */}
       <mesh ref={meshRef} position={[0, 0, -2]} receiveShadow>
         <planeGeometry args={[2000, 2000]} />
-        <meshStandardMaterial 
-          color="#66bd5a" 
-          roughness={1}
-          metalness={0.2}
+        <meshToonMaterial 
+          color="#49c945" 
+          roughness={0.2}
+          metalness={1}
         />
       </mesh>
 
       {/* Grade sutil para dar sensação de profundidade / espaço */}
       <gridHelper
-        args={[500, 100, '#0093f5ff', '#029affff']}
+        args={[500, 100, '#fff9d4', '#fff9d4']}
         rotation={[Math.PI / 2, 0, 0]}
         position={[0, 0, -1.9]}
       />

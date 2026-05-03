@@ -4,13 +4,13 @@ import { FRAME_WORLD_WIDTH, FRAME_WORLD_HEIGHT } from '@/utils/layoutEngine'
 
 const FRAME_DEPTH = 0.2
 const BORDER_SIZE = 0.25
-const FRAME_COLOR = '#FFFFFF'
+const FRAME_COLOR = 'rgba(255, 255, 255, 1)'
 
 export default React.memo(function MuralFrame({ arte, onClick }) {
   const texture = useTexture(arte.url_imagem)
 
   const position = useMemo(() => 
-    [arte.pos_x, arte.pos_y, -2 + FRAME_DEPTH], 
+    [arte.pos_x, arte.pos_y, -1.9 + FRAME_DEPTH], 
     [arte.pos_x, arte.pos_y]
   )
 
@@ -37,10 +37,10 @@ export default React.memo(function MuralFrame({ arte, onClick }) {
       {/* Moldura */}
       <mesh castShadow receiveShadow>
         <boxGeometry args={[totalW, totalH, FRAME_DEPTH]} />
-        <meshStandardMaterial 
+        <meshToonMaterial
           color={FRAME_COLOR} 
           roughness={0.5}
-          metalness={0.0}
+          metalness={0.5}
         />
       </mesh>
  
@@ -48,7 +48,7 @@ export default React.memo(function MuralFrame({ arte, onClick }) {
       {texture && (
         <mesh position={[0, 0, FRAME_DEPTH / 2 + 0.01]}>
           <planeGeometry args={[FRAME_WORLD_WIDTH, FRAME_WORLD_HEIGHT]} />
-          <meshBasicMaterial map={texture} />
+          <meshLambertMaterial map={texture} metalness={1} roughness={0.5} />
         </mesh>
       )}
 
