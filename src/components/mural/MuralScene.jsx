@@ -1,6 +1,6 @@
 import { useRef, useMemo, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Html } from '@react-three/drei'
+import { Html, Sky, Environment, ContactShadows } from '@react-three/drei'
 import MuralCamera from './MuralCamera'
 import MuralBackground from './MuralBackground'
 import MuralFrame from './MuralFrame'
@@ -24,6 +24,8 @@ export default function MuralScene() {
       style={{ background: '#BAE6FD' }}
     >
       <SceneLighting />
+      <Sky distance={450000} sunPosition={[10, 20, 10]} inclination={0} azimuth={0.25} />
+      <Environment preset="sunset" />
 
       <MuralBackground />
       <MuralCamera />

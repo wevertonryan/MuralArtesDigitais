@@ -19,7 +19,13 @@ export default function MuralBackground() {
       {/* Plano de fundo plano (Z bem atrás) */}
       <mesh ref={meshRef} position={[0, 0, -2]} receiveShadow>
         <planeGeometry args={[2000, 2000]} />
-        <meshStandardMaterial color="#ff9e0d" />
+        <meshStandardMaterial 
+          color="#ff9e0d" 
+          roughness={0.6} 
+          metalness={0.1}
+          emissive="#221100"
+          emissiveIntensity={0.1}
+        />
       </mesh>
 
       {/* Grade sutil para dar sensação de profundidade / espaço */}
