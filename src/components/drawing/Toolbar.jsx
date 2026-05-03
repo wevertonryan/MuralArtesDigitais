@@ -18,9 +18,13 @@ function Toolbar({
   color, setColor,
   brushSize, setBrushSize,
   canUndo, canRedo,
-  onUndo, onRedo, onClear,
+  onUndo, onRedo, onClear, onClearOverlay,
   isMobile
 }) {
+  const handleUndo = () => { onUndo(); onClearOverlay?.() }
+  const handleRedo = () => { onRedo(); onClearOverlay?.() }
+  const handleClear = () => { onClear(); onClearOverlay?.() }
+
   return (
     <div style={{ ...styles.toolbar, ...(isMobile ? styles.toolbarMobile : styles.toolbarDesktop) }}>
       <div style={{ ...styles.grid, ...(isMobile ? styles.gridMobile : styles.gridDesktop) }}>
@@ -47,15 +51,15 @@ function Toolbar({
 
         {/* Ações de Histórico e Limpar */}
         <button id="btn-undo" style={{ ...styles.actionBtn, ...(canUndo ? {} : styles.actionBtnDisabled) }}
-          onClick={onUndo} disabled={!canUndo} title="Desfazer">
+          onClick={handleUndo} disabled={!canUndo} title="Desfazer">
           <Undo2 size={20} color={canUndo ? 'var(--color-text)' : 'var(--color-text-muted)'} />
         </button>
         <button id="btn-redo" style={{ ...styles.actionBtn, ...(canRedo ? {} : styles.actionBtnDisabled) }}
-          onClick={onRedo} disabled={!canRedo} title="Refazer">
+          onClick={handleRedo} disabled={!canRedo} title="Refazer">
           <Redo2 size={20} color={canRedo ? 'var(--color-text)' : 'var(--color-text-muted)'} />
         </button>
         <button id="btn-clear" style={{ ...styles.actionBtn }}
-          onClick={onClear} title="Limpar tudo">
+          onClick={handleClear} title="Limpar tudo">
           <Trash2 size={20} color="#EF4444" />
         </button>
       </div>

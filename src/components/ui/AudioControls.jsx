@@ -1,5 +1,5 @@
 import React from 'react'
-import { Volume2, VolumeX, Settings } from 'lucide-react'
+import { Volume2, VolumeX, Music } from 'lucide-react'
 
 const styles = {
   container: {
@@ -96,7 +96,7 @@ export default function AudioControls({
         onClick={onPanelToggle}
         title="Configurações de áudio"
       >
-        <Settings size={20} />
+        <Music size={28} />
       </button>
 
       {showPanel && (

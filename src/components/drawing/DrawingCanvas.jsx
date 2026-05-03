@@ -143,6 +143,11 @@ export default function DrawingCanvas() {
       saveSnapshot()
     }
 
+    if (overlayCanvasRef.current) {
+      const ctx = overlayCanvasRef.current.getContext('2d')
+      ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+    }
+
     setStartPos(null)
     setCurrentPos(null)
   }, [startPos, currentPos, activeTool, color, brushSize, saveSnapshot])
@@ -243,6 +248,26 @@ export default function DrawingCanvas() {
     setOffset({ x: 0, y: 0 })
   }
 
+  const clearOverlay = useCallback(() => {
+    if (overlayCanvasRef.current) {
+      const ctx = overlayCanvasRef.current.getContext('2d')
+      ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+    }
+    setStartPos(null)
+    setCurrentPos(null)
+  }, [])
+
+  // Clear overlay and positions when tool changes
+  useEffect(() => {
+    if (!overlayCanvasRef.current) return
+    const ctx = overlayCanvasRef.current.getContext('2d')
+    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+    if (!['rect', 'circle', 'line'].includes(activeTool)) {
+      setStartPos(null)
+      setCurrentPos(null)
+    }
+  }, [activeTool])
+
   // Draw overlay preview
   useEffect(() => {
     if (startPos && currentPos && ['rect', 'circle', 'line'].includes(activeTool)) {
@@ -340,7 +365,7 @@ export default function DrawingCanvas() {
                   cursor: getCursor(activeTool),
                   pointerEvents: activeTool === 'hand' ? 'none' : 'auto',
                 }}
-                onPointerUp={handlePointerUp}
+                onPointerUp={!['rect', 'circle', 'line'].includes(activeTool) ? handlePointerUp : undefined}
               />
               <canvas
                 ref={overlayCanvasRef}
@@ -390,6 +415,7 @@ export default function DrawingCanvas() {
           onUndo={undo}
           onRedo={redo}
           onClear={clearCanvas}
+          onClearOverlay={clearOverlay}
           isMobile={isMobile}
         />
       </div>
