@@ -1,6 +1,6 @@
 import { useRef, useMemo, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Html, Sky, Environment, ContactShadows } from '@react-three/drei'
+import { Html } from '@react-three/drei'
 import MuralCamera from './MuralCamera'
 import MuralBackground from './MuralBackground'
 import MuralFrame from './MuralFrame'
@@ -24,8 +24,6 @@ export default function MuralScene() {
       style={{ background: '#BAE6FD' }}
     >
       <SceneLighting />
-      <Sky distance={450000} sunPosition={[10, 20, 10]} inclination={0} azimuth={0.25} />
-      <Environment preset="sunset" />
 
       <MuralBackground />
       <MuralCamera />
@@ -63,12 +61,15 @@ export default function MuralScene() {
 function SceneLighting() {
   const lightRef = useRef()
 
-  // A luz segue a câmera para manter a sombra sempre no frustum visível
   useFrame(({ camera }) => {
     if (lightRef.current) {
-      lightRef.current.position.set(camera.position.x + 10, camera.position.y + 20, 15)
+      // Posicionamento estratégico: luz vem de cima e da direita da visão atual
+      lightRef.current.position.set(camera.position.x + 8, camera.position.y + 12, 20)
       lightRef.current.target.position.set(camera.position.x, camera.position.y, 0)
       lightRef.current.target.updateMatrixWorld()
+      
+      // Força a atualização da projeção para evitar sombras cortadas em movimento
+      lightRef.current.shadow.camera.updateProjectionMatrix()
     }
   })
 
@@ -82,13 +83,13 @@ function SceneLighting() {
         castShadow
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
-        shadow-camera-far={40}
+        shadow-camera-far={60}
         shadow-camera-near={0.1}
-        shadow-camera-left={-25}
-        shadow-camera-right={25}
-        shadow-camera-top={25}
-        shadow-camera-bottom={-25}
-        shadow-bias={-0.001}
+        shadow-camera-left={-40}
+        shadow-camera-right={40}
+        shadow-camera-top={40}
+        shadow-camera-bottom={-40}
+        shadow-bias={-0.0001}
       />
       <pointLight position={[-10, -10, 5]} intensity={0.4} color="#BAE6FD" />
     </>

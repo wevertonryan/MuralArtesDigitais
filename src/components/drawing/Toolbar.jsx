@@ -1,8 +1,9 @@
-import { Paintbrush, Eraser, PaintBucket, Minus, Square, Circle, Pipette, Undo2, Redo2, Trash2 } from 'lucide-react'
+import { Paintbrush, Eraser, PaintBucket, Minus, Square, Circle, Pipette, Undo2, Redo2, Trash2, Hand } from 'lucide-react'
 
 const TOOLS = [
   { id: 'pen',     Icon: Paintbrush, label: 'Pincel' },
   { id: 'eraser',  Icon: Eraser, label: 'Borracha' },
+  { id: 'hand',    Icon: Hand, label: 'Mover' },
   { id: 'fill',    Icon: PaintBucket, label: 'Balde' },
   { id: 'line',    Icon: Minus,  label: 'Linha' },
   { id: 'rect',    Icon: Square,  label: 'Retângulo' },

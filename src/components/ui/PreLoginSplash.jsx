@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { v4 as uuidv4 } from 'uuid'
 import { useMuralStore } from '@/store/muralStore'
 
 export default function PreLoginSplash() {
@@ -10,7 +11,7 @@ export default function PreLoginSplash() {
     if (pseudonimo.trim().length > 0) {
       setSessionUser({
         pseudonimo: pseudonimo.trim(),
-        sessionId: crypto.randomUUID()
+        sessionId: uuidv4()
       })
     }
   }

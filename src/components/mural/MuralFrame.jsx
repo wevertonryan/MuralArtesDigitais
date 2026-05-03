@@ -16,12 +16,6 @@ export default function MuralFrame({ arte, onClick }) {
   const [visible, setVisible] = useState(true)
   const texture = useTexture(arte.url_imagem)
 
-  console.log('[MuralFrame] Renderizando arte:', arte.id, {
-    pos: [arte.pos_x, arte.pos_y],
-    url: arte.url_imagem,
-    visible
-  })
-
   // ===== ANIMAÇÃO DE ENTRADA (spring "pendurar") =====
   // Simplificando animação para diagnóstico
   const { scale, posY } = useSpring({
@@ -72,14 +66,14 @@ export default function MuralFrame({ arte, onClick }) {
       {/* Moldura */}
       <mesh castShadow receiveShadow>
         <boxGeometry args={[totalW, totalH, FRAME_DEPTH]} />
-        <meshStandardMaterial color={FRAME_COLOR} roughness={0.2} metalness={0.1} />
+        <meshLambertMaterial color={FRAME_COLOR} />
       </mesh>
  
       {/* Imagem da arte */}
       {texture && (
-        <mesh position={[0, 0, FRAME_DEPTH / 2 + 0.01]} receiveShadow>
+        <mesh position={[0, 0, FRAME_DEPTH / 2 + 0.01]}>
           <planeGeometry args={[FRAME_WORLD_WIDTH, FRAME_WORLD_HEIGHT]} />
-          <meshStandardMaterial map={texture} roughness={1} metalness={0} />
+          <meshBasicMaterial map={texture} />
         </mesh>
       )}
 

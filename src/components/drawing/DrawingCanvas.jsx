@@ -12,14 +12,22 @@ export default function DrawingCanvas() {
   const overlayCanvasRef = useRef(null)
   const containerRef = useRef(null)
   const [scale, setScale] = useState(1)
+  const [userZoom, setUserZoom] = useState(1)
+  const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [showWelcome, setShowWelcome] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const lastTouchDist = useRef(0)
+  const lastTouchCenter = useRef({ x: 0, y: 0 })
+  const isPinching = useRef(false)
+  const lastPanPos = useRef(null)
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768)
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  const totalScale = scale * userZoom
 
   const [startPos, setStartPos] = useState(null)
   const [currentPos, setCurrentPos] = useState(null)
@@ -38,6 +46,7 @@ export default function DrawingCanvas() {
     pickColor,
     saveSnapshot,
     exportWebP,
+    setIsDrawingDisabled,
   } = useDrawing(canvasRef)
 
   const { setView, setPendingArtwork } = useMuralStore()
@@ -60,47 +69,82 @@ export default function DrawingCanvas() {
 
   // ===== CANVAS CLICK (flood fill, dropper) =====
   const handleCanvasClick = useCallback((e) => {
+    if (isPinching.current) return
     if (!canvasRef.current) return
     const rect = canvasRef.current.getBoundingClientRect()
-    const x = Math.floor((e.clientX - rect.left) / scale)
-    const y = Math.floor((e.clientY - rect.top) / scale)
+    const x = Math.floor((e.clientX - rect.left) / totalScale)
+    const y = Math.floor((e.clientY - rect.top) / totalScale)
 
     if (activeTool === 'fill') {
       floodFill(x, y, color)
     } else if (activeTool === 'dropper') {
       pickColor(x, y)
     }
-  }, [activeTool, color, floodFill, pickColor, scale])
+  }, [activeTool, color, floodFill, pickColor, totalScale])
 
   // ===== OVERLAY DRAWING (SHAPES) =====
   const handlePointerDown = useCallback((e) => {
+    // Detecta multi-toque (pinch)
+    if (e.nativeEvent.touches?.length > 1) {
+      isPinching.current = true
+      return
+    }
+    
+    // Mover Canvas (Hand Tool)
+    if (activeTool === 'hand') {
+      lastPanPos.current = { x: e.clientX, y: e.clientY }
+      overlayCanvasRef.current.setPointerCapture(e.pointerId)
+      return
+    }
+
     if (!['rect', 'circle', 'line'].includes(activeTool)) return
     if (!overlayCanvasRef.current) return
     const rect = overlayCanvasRef.current.getBoundingClientRect()
-    const x = Math.floor((e.clientX - rect.left) / scale)
-    const y = Math.floor((e.clientY - rect.top) / scale)
+    const x = Math.floor((e.clientX - rect.left) / totalScale)
+    const y = Math.floor((e.clientY - rect.top) / totalScale)
     setStartPos({ x, y })
     setCurrentPos({ x, y })
     overlayCanvasRef.current.setPointerCapture(e.pointerId)
-  }, [activeTool, scale])
+  }, [activeTool, totalScale])
 
   const handlePointerMove = useCallback((e) => {
+    if (isPinching.current) return
+
+    // Mover Canvas (Hand Tool)
+    if (activeTool === 'hand' && lastPanPos.current) {
+      const dx = e.clientX - lastPanPos.current.x
+      const dy = e.clientY - lastPanPos.current.y
+      setOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }))
+      lastPanPos.current = { x: e.clientX, y: e.clientY }
+      return
+    }
+
     if (!startPos) return
     if (!['rect', 'circle', 'line'].includes(activeTool)) return
     const rect = overlayCanvasRef.current.getBoundingClientRect()
-    const x = Math.floor((e.clientX - rect.left) / scale)
-    const y = Math.floor((e.clientY - rect.top) / scale)
+    const x = Math.floor((e.clientX - rect.left) / totalScale)
+    const y = Math.floor((e.clientY - rect.top) / totalScale)
     setCurrentPos({ x, y })
-  }, [startPos, activeTool, scale])
+  }, [startPos, activeTool, totalScale])
 
   const handlePointerUp = useCallback((e) => {
+    lastTouchDist.current = 0
+    lastTouchCenter.current = { x: 0, y: 0 }
+    if (isPinching.current) {
+      setIsDrawingDisabled(false)
+    }
+    isPinching.current = false
+    lastPanPos.current = null
+
+    if (activeTool === 'hand') return
+
     if (['pen', 'eraser'].includes(activeTool)) {
       saveSnapshot()
       return
     }
-    
+
     if (!startPos) return
-    
+
     // Draw the shape to the main canvas
     if (['rect', 'circle', 'line'].includes(activeTool) && canvasRef.current) {
       const ctx = canvasRef.current.getContext('2d')
@@ -108,10 +152,10 @@ export default function DrawingCanvas() {
       ctx.lineWidth = brushSize
       ctx.lineCap = 'round'
       ctx.lineJoin = 'round'
-      
+
       const { x: sx, y: sy } = startPos
       const { x: cx, y: cy } = currentPos
-      
+
       ctx.beginPath()
       if (activeTool === 'rect') {
         ctx.rect(sx, sy, cx - sx, cy - sy)
@@ -132,6 +176,56 @@ export default function DrawingCanvas() {
     setCurrentPos(null)
   }, [startPos, currentPos, activeTool, color, brushSize, saveSnapshot])
 
+  // ===== PINCH & PAN LOGIC (Multi-touch) =====
+  const handleTouchMove = useCallback((e) => {
+    if (e.touches.length === 2) {
+      e.preventDefault()
+      if (!isPinching.current) {
+        setIsDrawingDisabled(true)
+      }
+      isPinching.current = true
+      
+      const touch1 = e.touches[0]
+      const touch2 = e.touches[1]
+
+      const dist = Math.sqrt(
+        Math.pow(touch2.clientX - touch1.clientX, 2) +
+        Math.pow(touch2.clientY - touch1.clientY, 2)
+      )
+
+      const centerX = (touch1.clientX + touch2.clientX) / 2
+      const centerY = (touch1.clientY + touch2.clientY) / 2
+
+      if (lastTouchDist.current > 0) {
+        const zoomDelta = dist / lastTouchDist.current
+        const nextZoom = Math.min(Math.max(userZoom * zoomDelta, 1), 8)
+        
+        const dx = centerX - lastTouchCenter.current.x
+        const dy = centerY - lastTouchCenter.current.y
+
+        if (nextZoom !== userZoom) {
+          const factor = nextZoom / userZoom
+          setOffset(prev => ({
+            x: centerX - (centerX - prev.x) * factor + dx,
+            y: centerY - (centerY - prev.y) * factor + dy
+          }))
+          setUserZoom(nextZoom)
+        } else {
+          setOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }))
+        }
+      }
+
+      lastTouchDist.current = dist
+      lastTouchCenter.current = { x: centerX, y: centerY }
+    }
+  }, [userZoom])
+
+  // Reset zoom e offset
+  const resetZoom = () => {
+    setUserZoom(1)
+    setOffset({ x: 0, y: 0 })
+  }
+
   // Draw overlay preview
   useEffect(() => {
     if (!overlayCanvasRef.current) return
@@ -142,10 +236,10 @@ export default function DrawingCanvas() {
       ctx.lineWidth = brushSize
       ctx.lineCap = 'round'
       ctx.lineJoin = 'round'
-      
+
       const { x: sx, y: sy } = startPos
       const { x: cx, y: cy } = currentPos
-      
+
       ctx.beginPath()
       if (activeTool === 'rect') {
         ctx.rect(sx, sy, cx - sx, cy - sy)
@@ -197,40 +291,63 @@ export default function DrawingCanvas() {
 
       <div style={{ ...styles.body, flexDirection: isMobile ? 'column' : 'row' }} ref={containerRef}>
         {/* Canvas escalado */}
-        <div style={styles.canvasWrapper}>
-          <canvas
-            ref={canvasRef}
-            width={CANVAS_WIDTH}
-            height={CANVAS_HEIGHT}
-            style={{
-              ...styles.canvas,
-              transform: `scale(${scale})`,
-              transformOrigin: 'top left',
-              cursor: getCursor(activeTool),
-            }}
-            onPointerUp={handlePointerUp} // Use the new handler for pen/eraser
-          />
-          <canvas
-            ref={overlayCanvasRef}
-            width={CANVAS_WIDTH}
-            height={CANVAS_HEIGHT}
-            style={{
-              ...styles.canvas,
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              background: 'transparent',
-              pointerEvents: ['rect', 'circle', 'line', 'fill', 'dropper'].includes(activeTool) ? 'auto' : 'none',
-              transform: `scale(${scale})`,
-              transformOrigin: 'top left',
-              cursor: getCursor(activeTool),
-              boxShadow: 'none',
-            }}
-            onClick={handleCanvasClick}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-          />
+        <div
+          style={styles.canvasWrapper}
+          onTouchMove={handleTouchMove}
+        >
+          <div style={{
+            transform: `translate(${offset.x}px, ${offset.y}px) scale(${userZoom})`,
+            transformOrigin: '0 0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <div style={{ position: 'relative' }}>
+              <canvas
+                ref={canvasRef}
+                width={CANVAS_WIDTH}
+                height={CANVAS_HEIGHT}
+                style={{
+                  ...styles.canvas,
+                  transform: `scale(${scale})`,
+                  transformOrigin: 'top left',
+                  cursor: getCursor(activeTool),
+                  pointerEvents: activeTool === 'hand' ? 'none' : 'auto',
+                }}
+                onPointerUp={handlePointerUp}
+              />
+              <canvas
+                ref={overlayCanvasRef}
+                width={CANVAS_WIDTH}
+                height={CANVAS_HEIGHT}
+                style={{
+                  ...styles.canvas,
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  background: 'transparent',
+                  pointerEvents: (['rect', 'circle', 'line', 'fill', 'dropper'].includes(activeTool) || activeTool === 'hand') ? 'auto' : 'none',
+                  transform: `scale(${scale})`,
+                  transformOrigin: 'top left',
+                  cursor: getCursor(activeTool),
+                  boxShadow: 'none',
+                }}
+                onClick={handleCanvasClick}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+              />
+            </div>
+          </div>
+
+          {userZoom > 1 && (
+            <button
+              style={styles.resetZoomBtn}
+              onClick={resetZoom}
+            >
+              Reset Zoom
+            </button>
+          )}
         </div>
 
         {/* Toolbar lateral */}
@@ -291,7 +408,7 @@ export default function DrawingCanvas() {
 }
 
 function getCursor(tool) {
-  const map = { pen: 'crosshair', eraser: 'cell', fill: 'copy', dropper: 'zoom-in', rect: 'crosshair', circle: 'crosshair', line: 'crosshair' }
+  const map = { pen: 'crosshair', eraser: 'cell', fill: 'copy', dropper: 'zoom-in', rect: 'crosshair', circle: 'crosshair', line: 'crosshair', hand: 'grab' }
   return map[tool] ?? 'crosshair'
 }
 
@@ -438,5 +555,21 @@ const styles = {
     background: '#D1D5DB',
     boxShadow: 'none',
     cursor: 'not-allowed',
+  },
+  resetZoomBtn: {
+    position: 'absolute',
+    bottom: '20px',
+    right: '20px',
+    padding: '8px 16px',
+    borderRadius: '20px',
+    background: 'rgba(0,0,0,0.6)',
+    color: '#fff',
+    border: 'none',
+    fontFamily: 'Nunito, sans-serif',
+    fontWeight: '700',
+    fontSize: '12px',
+    zIndex: 20,
+    cursor: 'pointer',
+    backdropFilter: 'blur(4px)',
   },
 }

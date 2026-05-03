@@ -11,12 +11,14 @@ export function useDrawing(canvasRef) {
   const historyRef = useRef([])
   const historyIndexRef = useRef(-1)
   const autosaveTimerRef = useRef(null)
+  const isDirtyRef = useRef(false)
 
   const [activeTool, setActiveTool] = useState('pen')
   const [brushSize, setBrushSize] = useState(6)
   const [color, setColor] = useState('#1E1B4B')
   const [canUndo, setCanUndo] = useState(false)
   const [canRedo, setCanRedo] = useState(false)
+  const [isDrawingDisabled, setIsDrawingDisabled] = useState(false)
 
   // ===== INICIALIZAÇÃO =====
   useEffect(() => {
@@ -31,8 +33,8 @@ export function useDrawing(canvasRef) {
       height: CANVAS_HEIGHT,
       color: color,
       weight: brushSize,
-      smoothing: 0.85,
-      adaptiveStroke: true,
+      smoothing: 0.6,
+      adaptiveStroke: false,
     })
 
     atramentRef.current = atrament
@@ -73,14 +75,17 @@ export function useDrawing(canvasRef) {
     if (!a) return
     a.color = color
     a.weight = brushSize
-    a.mode = activeTool === 'eraser' ? 'erase' : 'draw'
-  }, [activeTool, color, brushSize])
+    a.recordStrokes = !isDrawingDisabled
+    if (activeTool === 'eraser') a.mode = 'erase'
+    else a.mode = 'draw'
+  }, [activeTool, color, brushSize, isDrawingDisabled])
 
   // ===== HISTÓRICO =====
   const saveSnapshot = useCallback(() => {
+    isDirtyRef.current = true
     const canvas = canvasRef.current
     if (!canvas) return
-    const dataURL = canvas.toDataURL()
+    const dataURL = canvas.toDataURL('image/webp', 0.5)
     const idx = historyIndexRef.current
 
     // Remove redo history ao fazer nova ação
@@ -176,10 +181,12 @@ export function useDrawing(canvasRef) {
 
   // ===== AUTO-SAVE =====
   const autoSave = useCallback(async () => {
+    if (!isDirtyRef.current) return
     const canvas = canvasRef.current
     if (!canvas) return
-    const dataURL = canvas.toDataURL()
+    const dataURL = canvas.toDataURL('image/webp', 0.5)
     await saveRascunho(dataURL)
+    isDirtyRef.current = false
   }, [canvasRef])
 
   // ===== EXPORT =====
@@ -205,6 +212,7 @@ export function useDrawing(canvasRef) {
     saveSnapshot,
     exportWebP,
     clearDraft,
+    setIsDrawingDisabled,
   }
 }
 

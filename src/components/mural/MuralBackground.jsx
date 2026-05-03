@@ -19,12 +19,10 @@ export default function MuralBackground() {
       {/* Plano de fundo plano (Z bem atrás) */}
       <mesh ref={meshRef} position={[0, 0, -2]} receiveShadow>
         <planeGeometry args={[2000, 2000]} />
-        <meshStandardMaterial 
+        <meshLambertMaterial 
           color="#ff9e0d" 
-          roughness={0.6} 
-          metalness={0.1}
           emissive="#221100"
-          emissiveIntensity={0.1}
+          emissiveIntensity={0.05}
         />
       </mesh>
 
@@ -32,7 +30,7 @@ export default function MuralBackground() {
       <gridHelper
         args={[500, 100, '#0093f5ff', '#029affff']}
         rotation={[Math.PI / 2, 0, 0]}
-        position={[0, 0, -2]}
+        position={[0, 0, -1.9]}
       />
     </>
   )
