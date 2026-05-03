@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { REACOES_DISPONIVEIS } from '@/hooks/useReactions'
+import { audioService } from '@/services/audioService'
 
 export default function ReactionPicker({ arteId, onReact }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -8,6 +9,7 @@ export default function ReactionPicker({ arteId, onReact }) {
   const handleReact = async (emoji) => {
     if (reacting) return
     setReacting(true)
+    audioService.playSfx('reaction')
     await onReact(arteId, emoji)
     setIsOpen(false)
     setReacting(false)

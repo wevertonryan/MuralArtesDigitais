@@ -7,6 +7,7 @@ import { isPositionValid } from '@/utils/layoutEngine'
 import { FRAME_WORLD_WIDTH, FRAME_WORLD_HEIGHT } from '@/utils/layoutEngine'
 import { uploadArtworkToStorage, insertArtwork } from '@/services/supabase'
 import { upsertArte } from '@/services/dexieService'
+import { audioService } from '@/services/audioService'
 import { v4 as uuidv4 } from 'uuid'
 
 export default function PlacementGhost({ artwork, existingArtes }) {
@@ -76,6 +77,7 @@ export default function PlacementGhost({ artwork, existingArtes }) {
 
       await upsertArte(localArte)
       addArte(localArte)
+      audioService.playSfx('publish')
 
       clearPendingArtwork()
       setView('mural')

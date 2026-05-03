@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { useMuralStore } from '@/store/muralStore'
+import { audioService } from '@/services/audioService'
 
 export default function PreLoginSplash() {
   const { setSessionUser } = useMuralStore()
@@ -9,6 +10,7 @@ export default function PreLoginSplash() {
   const handleSubmit = (e) => {
     e.preventDefault()
     if (pseudonimo.trim().length > 0) {
+      audioService.playBgm()
       setSessionUser({
         pseudonimo: pseudonimo.trim(),
         sessionId: uuidv4()

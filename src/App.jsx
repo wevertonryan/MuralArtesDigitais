@@ -1,9 +1,11 @@
 import { useEffect, Suspense, lazy } from 'react'
 import { useMuralStore } from '@/store/muralStore'
 import { useMural } from '@/hooks/useMural'
+import { useAudio } from '@/hooks/useAudio'
+import { useAudioEffects } from '@/hooks/useAudioEffects'
 import MuralScene from '@/components/mural/MuralScene'
 import FAB from '@/components/ui/FAB'
-import WelcomeModal from '@/components/ui/WelcomeModal'
+import AudioControls from '@/components/ui/AudioControls'
 import PreLoginSplash from '@/components/ui/PreLoginSplash'
 
 // Lazy load das views não-críticas
@@ -29,6 +31,10 @@ export default function App() {
   const selectedArte = useMuralStore(s => s.selectedArte)
   const setRegiao = useMuralStore(s => s.setRegiao)
   const sessionUser = useMuralStore(s => s.sessionUser)
+
+  // Áudio
+  const audio = useAudio()
+  useAudioEffects()
 
   // Inicializa sync do mural
   useMural()
@@ -74,7 +80,21 @@ export default function App() {
         </div>
       )}
 
-      {/* ===== UI GLOBAL (apenas no Mural) ===== */}
+      {/* ===== UI GLOBAL (apenas no mural) ===== */}
+      {(view === 'mural' || view === 'placement') && (
+        <AudioControls
+          muted={audio.muted}
+          isPlaying={audio.isPlaying}
+          bgmVolume={audio.bgmVolume}
+          sfxVolume={audio.sfxVolume}
+          showPanel={audio.showPanel}
+          onToggle={audio.toggleMusic}
+          onPlay={audio.playMusic}
+          onBgmVolumeChange={audio.setBgmVolume}
+          onSfxVolumeChange={audio.setSfxVolume}
+          onPanelToggle={() => audio.setShowPanel(!audio.showPanel)}
+        />
+      )}
       <FAB />
 
       {/* ===== LABEL DE MODO PLACEMENT ===== */}
