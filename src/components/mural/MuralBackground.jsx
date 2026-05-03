@@ -19,10 +19,10 @@ export default function MuralBackground() {
       {/* Plano de fundo plano (Z bem atrás) */}
       <mesh ref={meshRef} position={[0, 0, -2]} receiveShadow>
         <planeGeometry args={[2000, 2000]} />
-        <meshLambertMaterial 
-          color="#ff9e0d" 
-          emissive="#221100"
-          emissiveIntensity={0.05}
+        <meshStandardMaterial 
+          color="#66bd5a" 
+          roughness={1}
+          metalness={0.2}
         />
       </mesh>
 

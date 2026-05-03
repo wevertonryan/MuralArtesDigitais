@@ -1,6 +1,8 @@
-import { useRef, useMemo, Suspense } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
-import { Html } from '@react-three/drei'
+import { Suspense } from 'react'
+import { Canvas } from '@react-three/fiber'
+import * as THREE from 'three'
+import { Environment, AdaptiveEvents, PerformanceMonitor } from '@react-three/drei'
+import { EffectComposer, Vignette, Bloom } from '@react-three/postprocessing'
 import MuralCamera from './MuralCamera'
 import MuralBackground from './MuralBackground'
 import MuralFrame from './MuralFrame'
@@ -25,18 +27,21 @@ export default function MuralScene() {
       shadows
       camera={{ position: [0, 0, 10], fov: 50 }}
       dpr={[1, 2]}
+      gl={{
+        antialias: true,
+        outputColorSpace: 'srgb',
+        toneMapping: 'acesfilmic',
+        toneMappingExposure: 1.0
+      }}
       style={{ background: '#BAE6FD' }}
     >
+      <AdaptiveEvents />
+      <PerformanceMonitor />
       <SceneLighting />
 
       <MuralBackground />
+      <ShadowPlane />
       <MuralCamera />
-
-      {/* Teste: Cubo no centro para ver se o 3D funciona */}
-      <mesh position={[0, 0, -2]}>
-        <boxGeometry args={[0.5, 0.5, 0.5]} />
-        <meshStandardMaterial color="red" />
-      </mesh>
 
       {/* Quadros das artes */}
       <Suspense fallback={
@@ -58,44 +63,48 @@ export default function MuralScene() {
       {view === 'placement' && pendingArtwork && (
         <PlacementGhost artwork={pendingArtwork} existingArtes={artes} />
       )}
+
+      <EffectComposer>
+        <Bloom
+          luminanceThreshold={0.9}
+          luminanceSmoothing={0.4}
+          intensity={0.15}
+          mipmapBlur
+        />
+      </EffectComposer>
     </Canvas>
   )
 }
 
+function ShadowPlane() {
+  return (
+    <mesh position={[0, 0, -3]} receiveShadow>
+      <planeGeometry args={[100, 100]} />
+      <shadowMaterial opacity={0.3} color="#000000" />
+    </mesh>
+  )
+}
+
 function SceneLighting() {
-  const lightRef = useRef()
-
-  useFrame(({ camera }) => {
-    if (lightRef.current) {
-      // Posicionamento estratégico: luz vem de cima e da direita da visão atual
-      lightRef.current.position.set(camera.position.x + 8, camera.position.y + 12, 20)
-      lightRef.current.target.position.set(camera.position.x, camera.position.y, 0)
-      lightRef.current.target.updateMatrixWorld()
-      
-      // Força a atualização da projeção para evitar sombras cortadas em movimento
-      lightRef.current.shadow.camera.updateProjectionMatrix()
-    }
-  })
-
   return (
     <>
-      <ambientLight intensity={0.4} color="#FFFFFF" />
+      <Environment preset="apartment" background={false} />
+      <ambientLight intensity={0.5} color="#ffffff" />
       <directionalLight
-        ref={lightRef}
-        intensity={1.2}
-        color="#FFFFFF"
+        position={[10, 15, 10]}
+        intensity={1.0}
+        color="#fff8e7"
         castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-        shadow-camera-far={60}
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-far={50}
         shadow-camera-near={0.1}
-        shadow-camera-left={-40}
-        shadow-camera-right={40}
-        shadow-camera-top={40}
-        shadow-camera-bottom={-40}
+        shadow-camera-left={-30}
+        shadow-camera-right={30}
+        shadow-camera-top={30}
+        shadow-camera-bottom={-30}
         shadow-bias={-0.0001}
       />
-      <pointLight position={[-10, -10, 5]} intensity={0.4} color="#BAE6FD" />
     </>
   )
 }

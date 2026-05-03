@@ -37,7 +37,11 @@ export default React.memo(function MuralFrame({ arte, onClick }) {
       {/* Moldura */}
       <mesh castShadow receiveShadow>
         <boxGeometry args={[totalW, totalH, FRAME_DEPTH]} />
-        <meshLambertMaterial color={FRAME_COLOR} />
+        <meshStandardMaterial 
+          color={FRAME_COLOR} 
+          roughness={0.5}
+          metalness={0.0}
+        />
       </mesh>
  
       {/* Imagem da arte */}
