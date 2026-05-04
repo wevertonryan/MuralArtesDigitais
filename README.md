@@ -31,9 +31,9 @@ A aplicação é projetada para ser leve, performática e visualmente impactante
 | **Engine 3D** | `Three.js` + `R3F` | Visualização imersiva do mural e transições de câmera. |
 | **Engine 2D** | `Atrament.js` | Ferramenta de desenho (pincéis, formas, preenchimento). |
 | **Banco Local** | `Dexie.js` | Cache local (IndexedDB) para persistência e performance. |
-| **Banco de Dados** | `Firestore` | Armazenamento de metadados, coordenadas, reações e hospedagem das imagens das artes (WebP). |
-| **Backend** | `Firebase Functions` | Lógica server-side, middleware de IA e operações. |
-| **Hospedagem** | `Firebase Hosting` | Deploy da aplicação PWA para alta disponibilidade |
+| **Banco de Dados** | `Supabase PostgreSQL` | Armazenamento de metadados, coordenadas, reações e hospedagem das imagens das artes (WebP). |
+| **Backend** | `Supabase Edge Functions` | Lógica server-side, middleware de IA e operações. |
+| **Hospedagem** | `Vercel` | Deploy da aplicação PWA para alta disponibilidade |
 
 ---
 
@@ -44,9 +44,10 @@ A aplicação é projetada para ser leve, performática e visualmente impactante
 *   **Navegação Livre:** Movimentação fluida via *Pan* (toque e arraste), travada nos eixos X e Y.
 *   **Expansão Inteligente:** O mural cresce conforme a necessidade, mantendo a área de navegação contida se houver poucos desenhos.
 *   **Prevenção de Sobreposição:** Lógica automática para garantir que um desenho não cubra outro.
-*   **Atualização em Tempo Real:** Sincronização via Firestore para que novas artes apareçam instantaneamente para todos os usuários.
+*   **Atualização em Tempo Real:** Sincronização via Supabase Realtime para que novas artes apareçam instantaneamente para todos os usuários.
 *   **Carregamento Dinâmico:** Os componentes 3D são renderizados sob demanda conforme a câmera se aproxima das coordenadas, otimizando o uso de memória.
 *   **Botão de Ação Flutuante (FAB):** Um botão circular 2D no canto inferior direito com ícone de paleta e pincel ("Criar Novo").
+*   **Música Ambiente:** Música ambiente suave e calma para acompanhar a navegação no mural e interação com a aplicação.
 
 ### 🔍 4.2. Visualização de Desenho
 Ao selecionar uma arte, ocorre um **zoom in suave** Foco no Desenho completo e Centralizado na Tela com informações sobre o desenho
@@ -86,8 +87,8 @@ Uma interface minimalista e intuitiva, focada no essencial:
 > **Filtro Regional:** O sistema utiliza geolocalização aproximada (via IP) para priorizar a exibição de artes da mesma região (ex: Jaú/SP), criando um senso de comunidade local.
 
 ### 🛡️ 5.1. Segurança e Moderação (IA)
-*   **Middleware de Validação:** Toda imagem enviada passa por um middleware (Firebase Functions) que utiliza IA (Transformers.js) para detectar conteúdo sensível.
-*   **Filtro Silencioso:** Se detectado conteúdo impróprio, a arte **não** é salva no Firestore. Ela permanece apenas no navegador do autor (via Dexie.js), simulando sucesso na postagem, mas ficando invisível para os demais usuários. O desenho local é deletado ao fim da sessão.
+*   **Middleware de Validação:** Toda imagem enviada passa por um middleware (Supabase Edge Functions) que utiliza IA (Transformers.js) para detectar conteúdo sensível.
+*   **Filtro Silencioso:** Se detectado conteúdo impróprio, a arte **não** é salva no Supabase. Ela permanece apenas no navegador do autor (via Dexie.js), simulando sucesso na postagem, mas ficando invisível para os demais usuários. O desenho local é deletado ao fim da sessão.
 
 ---
 
@@ -113,9 +114,9 @@ Uma interface minimalista e intuitiva, focada no essencial:
 > **Nota de Design:** O estilo deve ser mais vibrante e com o traço de cartoon (outlines) mais evidente do que no exemplo acima.
 ---
 
-## 📊 7. Modelagem de Dados (Firestore)
+## 📊 7. Modelagem de Dados (Supabase PostgreSQL)
 
-**Coleção:** `mural_artes`
+**Tabela:** `mural_artes`
 
 ```json
 {
@@ -147,7 +148,7 @@ Uma interface minimalista e intuitiva, focada no essencial:
 
 ## 💾 8. Estratégia de Cache e Persistência (Dexie.js)
 
-Para maximizar a performance e reduzir custos com Firebase:
-*   **Sincronização Híbrida:** Ao iniciar, a aplicação baixa um lote inicial do Firestore e o armazena no **Dexie.js (IndexedDB)**, caso ainda não esteja no banco local.
+Para maximizar a performance e reduzir custos com Supabase:
+*   **Sincronização Híbrida:** Ao iniciar, a aplicação baixa um lote inicial do Supabase e o armazena no **Dexie.js (IndexedDB)**, caso ainda não esteja no banco local.
 *   **Busca por Proximidade:** A busca de quais quadros exibir é feita diretamente no banco local, comparando a posição da câmera do R3F com as coordenadas X/Y armazenadas no Dexie.
 *   **Redução de Overload:** O navegador gerencia apenas os componentes 3D visíveis ou próximos, consultando o banco local em vez de fazer requisições constantes à rede.

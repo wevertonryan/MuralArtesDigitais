@@ -33,7 +33,7 @@ export function useDrawing(canvasRef) {
       height: CANVAS_HEIGHT,
       color: color,
       weight: brushSize,
-      smoothing: 0.4,
+      smoothing: 0.5,
       adaptiveStroke: false,
     })
 

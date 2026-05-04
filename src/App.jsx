@@ -81,7 +81,7 @@ export default function App() {
       )}
 
       {/* ===== UI GLOBAL (apenas no mural) ===== */}
-      {(view === 'mural' || view === 'placement') && (
+      {(view === 'mural') && (
         <AudioControls
           muted={audio.muted}
           isPlaying={audio.isPlaying}
