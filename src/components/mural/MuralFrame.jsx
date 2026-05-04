@@ -56,7 +56,8 @@ export default React.memo(function MuralFrame({ arte, onClick }) {
       <Html
         position={[0, totalH / 2 + 0.5, 0]}
         transform={true}
-        occlude={false}
+        occlude={true}
+        zIndexRange={[10, 20]}
         style={{ pointerEvents: 'none', userSelect: 'none' }}
       >
         <div style={styles.title}>{arte.titulo}</div>
@@ -65,7 +66,8 @@ export default React.memo(function MuralFrame({ arte, onClick }) {
       <Html
         position={[0, -totalH / 2 - 0.5, 0]}
         transform={true}
-        occlude={false}
+        occlude={true}
+        zIndexRange={[10, 20]}
         style={{ ...styles.metaRow, width: '275px' }}
       >
         <div style={styles.author}>@{arte.autor}</div>
