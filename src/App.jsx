@@ -1,4 +1,4 @@
-import { useEffect, Suspense, lazy } from 'react'
+import { useEffect, Suspense, lazy, useState } from 'react'
 import { useMuralStore } from '@/store/muralStore'
 import { useMural } from '@/hooks/useMural'
 import { useAudio } from '@/hooks/useAudio'
@@ -7,6 +7,8 @@ import MuralScene from '@/components/mural/MuralScene'
 import FAB from '@/components/ui/FAB'
 import AudioControls from '@/components/ui/AudioControls'
 import PreLoginSplash from '@/components/ui/PreLoginSplash'
+import CreditsPage from '@/components/ui/CreditsPage'
+import { Users } from 'lucide-react'
 
 // Lazy load das views não-críticas
 const DrawingCanvas = lazy(() => import('@/components/drawing/DrawingCanvas'))
@@ -31,6 +33,7 @@ export default function App() {
   const selectedArte = useMuralStore(s => s.selectedArte)
   const setRegiao = useMuralStore(s => s.setRegiao)
   const sessionUser = useMuralStore(s => s.sessionUser)
+  const [showCredits, setShowCredits] = useState(false)
 
   // Áudio
   const audio = useAudio()
@@ -97,6 +100,21 @@ export default function App() {
       )}
       <FAB />
 
+      {/* ===== BOTÃO DE COLABORADORES ===== */}
+      {sessionUser && view === 'mural' && (
+        <button
+          style={styles.creditsButton}
+          onClick={() => setShowCredits(true)}
+          title="Colaboradores"
+          aria-label="Ver colaboradores"
+        >
+          <Users size={20} />
+        </button>
+      )}
+
+      {/* ===== MODAL DE COLABORADORES ===== */}
+      {showCredits && <CreditsPage onClose={() => setShowCredits(false)} />}
+
       {/* ===== LABEL DE MODO PLACEMENT ===== */}
       {view === 'placement' && (
         <div style={styles.placementBanner}>
@@ -158,5 +176,23 @@ const styles = {
     whiteSpace: 'nowrap',
     boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
     animation: 'slideUp 0.4s ease forwards',
+  },
+  creditsButton: {
+    position: 'fixed',
+    top: '16px',
+    right: '16px',
+    width: '44px',
+    height: '44px',
+    borderRadius: '50%',
+    background: 'rgba(255,255,255,0.9)',
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'var(--color-text)',
+    boxShadow: 'var(--shadow-md)',
+    zIndex: 50,
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
   },
 }
